@@ -1,7 +1,19 @@
 #!/usr/bin/env python3
 
+import tkinter as tk
+
+# Normal import
+try:
+    from smartrenamer.library.tools import load_arguments
+    from smartrenamer.library.ui import build_main_window
+# Allow local import for development purposes
+except ModuleNotFoundError:
+    from library.tools import load_arguments
+    from library.ui import build_main_window
+
 def main():
-    print("Hello projectname!")
+    window = build_main_window()
+    window.mainloop()
 
 if __name__ == '__main__':
     main()
