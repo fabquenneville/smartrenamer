@@ -2,9 +2,6 @@
 
 import sys
 
-import tkinter.filedialog
-import tkinter as tk
-
 def load_arguments():
     '''Get/load command parameters 
 
@@ -23,7 +20,3 @@ def load_arguments():
             arguments["option"] = True
 
     return arguments
-
-def open_directory():
-    folder_selected = tkinter.filedialog.askdirectory()
-    print(folder_selected)
