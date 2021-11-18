@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 import sys
-import tkinter.filedialog
+
+from pathlib import Path
 
 def load_arguments():
     '''Get/load command parameters 
@@ -23,12 +24,35 @@ def load_arguments():
     return arguments
 
 
-def open_directory(window):
-    folder_selected = tkinter.filedialog.askdirectory()
-    entry = window.nametowidget("dir_selector_frame.directory_entry")
-    entry.delete(0,"end")
-    entry.insert(0, folder_selected)
-
 def print_allwidgets(window):
     for widget in window.winfo_children():
         print(widget)
+
+
+def get_content(path, directories = False, absolute = True):
+    ''' get the list of the content in a filepath
+
+    Args:
+        path: the parent path to work on
+        directories = False: If true only directories will be returned
+
+    Returns:
+        folderlist: Operations success
+    '''
+    
+    if not path[-1] == "/":
+        path += "/"
+    
+    pathobj = Path(path)
+    items = None
+
+    if directories:
+        items = [str(name) for name in pathobj.rglob("*")]
+    else:
+        items = [str(name) for name in pathobj.rglob("*") if name.is_file()]
+    
+    if not absolute:
+        for i in range(len(items)):
+            items[i] = items[i].replace(path, "./")
+    
+    return items
