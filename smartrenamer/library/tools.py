@@ -20,3 +20,4 @@ def load_arguments():
             arguments["option"] = True
 
     return arguments
+
