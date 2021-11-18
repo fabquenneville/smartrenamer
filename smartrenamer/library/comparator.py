@@ -4,7 +4,11 @@ import tkinter as tk
 
 class Comparator(tk.LabelFrame):
     def __init__(self, parent, *args, **kwargs):
-        tk.LabelFrame.__init__(self, parent, *args, **kwargs)
+        tk.LabelFrame.__init__(
+            self, parent,
+            name="comparator_frame",
+            pady=10, *args, **kwargs
+        )
         
         self.load_components()
 

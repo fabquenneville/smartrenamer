@@ -6,7 +6,13 @@ from .tools import get_content
 
 class DirectorySelector(tk.LabelFrame):
     def __init__(self, parent, *args, **kwargs):
-        tk.LabelFrame.__init__(self, parent, *args, **kwargs)
+        tk.LabelFrame.__init__(
+            self, parent,
+            text="Current directory",
+            name="directoryselector",
+            padx=10, pady=10,
+            *args, **kwargs
+        )
 
         self.load_components(parent)
 

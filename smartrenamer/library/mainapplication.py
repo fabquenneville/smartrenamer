@@ -6,10 +6,10 @@ from pathlib import Path
 import tkinter.filedialog
 import tkinter as tk
 
-from .mainmenu import MainMenu
-from .directoryselector import DirectorySelector
-from .operationselector import OperationSelector
 from .comparator import Comparator
+from .directoryselector import DirectorySelector
+from .mainmenu import MainMenu
+from .optionselector import OptionSelector
 from .tools import get_content
 
 class MainApplication(tk.Tk):
@@ -19,7 +19,7 @@ class MainApplication(tk.Tk):
         self.colors = None
         self.mainmenu = None
         self.directoryselector = None
-        self.operationselector = None
+        self.optionselector = None
         self.comparator = None
         self.userconfig = {
             "main": {
@@ -40,31 +40,12 @@ class MainApplication(tk.Tk):
         self.geometry("%dx%d+0+0" % (w, h))
 
         self.mainmenu = MainMenu(self)
-
-        self.directoryselector = DirectorySelector(
-            self,
-            text="Current directory",
-            name="directoryselector",
-            padx=10,
-            pady=10
-        )
-
-        self.operationselector = OperationSelector(
-            self,
-            text="Operations",
-            name="operationselector",
-            padx=10,
-            pady=10
-        )
-
-        self.comparator = Comparator(
-            self,
-            name="comparator_frame",
-            pady=10
-        )
+        self.directoryselector = DirectorySelector(self)
+        self.optionselector = OptionSelector(self)
+        self.comparator = Comparator(self)
 
         self.directoryselector.pack(fill="x")
-        self.operationselector.pack(fill="x")
+        self.optionselector.pack(fill="x")
         self.comparator.pack(expand=True, fill="both")
 
         self.config(menu=self.mainmenu)
