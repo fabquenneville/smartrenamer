@@ -6,9 +6,9 @@ class Comparator(tk.LabelFrame):
     def __init__(self, parent, *args, **kwargs):
         tk.LabelFrame.__init__(self, parent, *args, **kwargs)
         
-        self.load_components(parent)
+        self.load_components()
 
-    def load_components(self, window):
+    def load_components(self):
         before_frame = tk.LabelFrame(self, text="Before", name="before_frame", pady=10)
         after_frame = tk.LabelFrame(self, text="After", name="after_frame", pady=10)
         scrollbar = tk.Scrollbar(self)

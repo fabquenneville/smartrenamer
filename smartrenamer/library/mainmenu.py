@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import tkinter.filedialog
 import tkinter as tk
 
 from .directoryselector import DirectorySelector
@@ -8,9 +9,9 @@ class MainMenu(tk.Menu):
     def __init__(self, parent, *args, **kwargs):
         tk.Menu.__init__(self, parent, *args, **kwargs)
 
-        self.load_components()
+        self.load_components(parent)
 
-    def load_components(self):
+    def load_components(self, mainapp):
 
         file_menu = tk.Menu(self, tearoff=False)
         file_menu.add_command(
@@ -18,7 +19,7 @@ class MainMenu(tk.Menu):
         )
         file_menu.add_command(
             label='Open directory',
-            command=lambda: DirectorySelector.open_directory(self)
+            command=mainapp.open_directory
         )
         file_menu.add_command(label='Close')
         file_menu.add_separator()

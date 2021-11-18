@@ -10,8 +10,8 @@ except ModuleNotFoundError:
     from library.mainapplication import MainApplication
 
 def main():
-    window = MainApplication()
-    window.mainloop()
+    mainapp = MainApplication()
+    mainapp.mainloop()
 
 
 if __name__ == '__main__':
