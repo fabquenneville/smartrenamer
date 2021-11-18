@@ -2,15 +2,15 @@
 
 # Normal import
 try:
-    from smartrenamer.library.tools import load_arguments
-    from smartrenamer.library.ui import build_main_window
+    from smartrenamer.library.tools import load_arguments, print_allwidgets
+    from smartrenamer.library.mainwindow import MainWindow
 # Allow local import for development purposes
 except ModuleNotFoundError:
-    from library.tools import load_arguments
-    from library.ui import build_main_window
+    from library.tools import load_arguments, print_allwidgets
+    from library.mainwindow import MainWindow
 
 def main():
-    window = build_main_window()
+    window = MainWindow()
     window.mainloop()
 
 
