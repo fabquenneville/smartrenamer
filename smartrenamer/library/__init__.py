@@ -1,1 +1,1 @@
-__all__ = ["comparator", "directoryselector", "mainmenu", "mainapplication", "operationselector", "optionselector", "theme", "tools"]
+__all__ = ["comparator", "directoryselector", "mainmenu", "mainapplication", "operationselector", "optionselector", "theme", "tools", "wordmanager"]

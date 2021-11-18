@@ -7,33 +7,37 @@ class OperationSelector(tk.LabelFrame):
         tk.LabelFrame.__init__(
             self, parent,
             text="Operations",
-            name="optionselector",
+            name="operationselector",
             padx=10, pady=10,
             *args, **kwargs
         )
 
-        self.action = tk.IntVar()
+        self.action = tk.StringVar()
 
-        self.load_components()
-        self.reload_subcomponents()
+        self.load_components(parent)
 
-    def load_components(self):
-        radiobutton_widget1 = tk.Radiobutton(self,
+    def load_components(self, parent):
+        radiobutton_widget1 = tk.Radiobutton(
+            self,
             text="Clean",
             variable=self.action,
-            value="clean"
+            value="clean",
+            command=lambda: (
+                parent.reload_subcomponents(),
+            )
         )
-        radiobutton_widget2 = tk.Radiobutton(self,
+        radiobutton_widget2 = tk.Radiobutton(
+            self,
             text="Replace",
             variable=self.action,
-            value="replace"
+            value="replace",
+            command=lambda: (
+                parent.reload_subcomponents(),
+            )
         )
         radiobutton_widget1.pack(side="left")
         radiobutton_widget2.pack(side="left")
         radiobutton_widget1.select()
-
-    def reload_subcomponents(self):
-        pass
 
     def get_action(self):
         return self.action.get()

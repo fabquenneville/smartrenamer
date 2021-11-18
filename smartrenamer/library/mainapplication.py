@@ -99,8 +99,13 @@ class MainApplication(tk.Tk):
         entry.delete(0,"end")
         entry.insert(0, selected_folder)
 
-        # mainapp.set_directory(selected_folder)
         content = get_content(selected_folder, absolute=False)
+
+        operationselector = self.nametowidget("optionselector.operationselector")
+        action = operationselector.get_action()
+        if action == "clean":
+            wordmanager = self.nametowidget("optionselector.wordmanager")
+            wordmanager.load_words(content)
         
         before_list = self.nametowidget("comparator_frame.before_frame.before_list")
         after_list = self.nametowidget("comparator_frame.after_frame.after_list")
