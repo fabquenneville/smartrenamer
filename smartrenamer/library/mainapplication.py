@@ -90,10 +90,10 @@ class MainApplication(tk.Tk):
     def open_directory(self, selected_folder = False):
         if not selected_folder:
             selected_folder = tkinter.filedialog.askdirectory()
-        self.userconfig["main"]["selected_folder"] = selected_folder;
+        if not selected_folder:
+            return False
+        self.userconfig["main"]["selected_folder"] = selected_folder
         self.save_config()
-
-
 
         entry = self.nametowidget("directoryselector.directory_entry")
         entry.delete(0,"end")
