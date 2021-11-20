@@ -40,35 +40,69 @@ class OptionSelector(tk.LabelFrame):
         self.wordmanager.grid(row=1, column=0, columnspan=2, sticky="sew")
 
     def reload_subcomponents(self):
+        mainapp = self.winfo_toplevel()
+        config = mainapp.get_config()
+        separators_from = config["main"]["separators_from"]
+        separators_to = config["main"]["separators_to"]
+
         for child in self.operationoptionsselector.winfo_children():
             child.destroy()
         
         action = self.operationselector.get_action()
         if action == "clean":
             self.operationoptions = {
-                "autoremove": tk.IntVar(),
-                "unify_markers": tk.IntVar(),
+                "autoremove":               tk.IntVar(),
+                "unify_separators":         tk.IntVar(),
+                "unify_separators_from":    tk.StringVar(),
+                "unify_separators_to":      tk.StringVar(),
             }
 
             autoremove_checkbutton = tk.Checkbutton(
                 self.operationoptionsselector,
-                text="Auto remove",
-                variable=self.operationoptions["autoremove"],
-                onvalue=1, offvalue=0
+                text = "Auto remove",
+                variable = self.operationoptions["autoremove"],
+                onvalue = 1, offvalue = 0
             )
             autoremove_checkbutton.select()
 
-            unify_markers_checkbutton = tk.Checkbutton(
+            unify_separators_checkbutton = tk.Checkbutton(
                 self.operationoptionsselector,
-                text="Unify Markers",
-                variable=self.operationoptions["unify_markers"],
-                onvalue=1, offvalue=0
+                text = "Unify Separators",
+                variable = self.operationoptions["unify_separators"],
+                onvalue = 1, offvalue=0
             )
-            unify_markers_checkbutton.select()
+            unify_separators_checkbutton.select()
 
+            unify_separators_from_label = tk.Label(
+                self.operationoptionsselector,
+                text = "From:"
+            )
+            unify_separators_from = tk.Entry(
+                self.operationoptionsselector,
+                name = "unify_separators_from",
+                textvariable = self.operationoptions["unify_separators_from"]
+            )
+            if separators_from:
+                unify_separators_from.insert(tk.END, separators_from)
+
+            unify_separators_to_label = tk.Label(
+                self.operationoptionsselector,
+                text = "To"
+            )
+            unify_separators_to = tk.Entry(
+                self.operationoptionsselector,
+                name = "unify_separators_to",
+                textvariable = self.operationoptions["unify_separators_to"]
+            )
+            if separators_to:
+                unify_separators_to.insert(tk.END, separators_to)
 
             autoremove_checkbutton.pack(side="left")
-            unify_markers_checkbutton.pack(side="left")
+            unify_separators_checkbutton.pack(side="left")
+            unify_separators_from_label.pack(side="left")
+            unify_separators_from.pack(side="left")
+            unify_separators_to_label.pack(side="left")
+            unify_separators_to.pack(side="left")
         
 
     def get_action(self):

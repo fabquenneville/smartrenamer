@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 
 import os
-import time
 import tkinter as tk
-from functools import partial, reduce
+from functools import partial
 from itertools import chain
 from typing import Iterator
 from collections import Counter
@@ -25,6 +24,20 @@ class WordManager(tk.LabelFrame):
                 self.grid_rowconfigure(i, weight=1)
 
         self.action = tk.StringVar()
+    
+    def get_separators(self):
+        mainapp = self.winfo_toplevel()
+        config = mainapp.get_config()
+        separators_from = config["main"]["separators_from"]
+        separators_to = config["main"]["separators_to"]
+
+        new_from = mainapp.nametowidget("optionselector.operationoptionsselector.unify_separators_from").get()
+        new_to = mainapp.nametowidget("optionselector.operationoptionsselector.unify_separators_to").get()
+
+        if separators_from != new_from or separators_to != new_to and new_from and new_to:
+            mainapp.update_separators(new_from, new_to)
+            separators_from, separators_to = new_from, new_to
+        return separators_from, separators_to
 
     def get_action(self):
         return self.action.get()
@@ -33,137 +46,51 @@ class WordManager(tk.LabelFrame):
         for child in self.winfo_children():
             child.destroy()
 
-        # String extensions
-        filesnoext = []
-        for file in files:
-            filesnoext.append(str(os.path.splitext(file)[0]).lower())
+        separators_from, separators_to = self.get_separators()
 
-        # Find substrings
-        seqs_ngrams = map(WordManager.allngram, filesnoext)
+        file_components = []
+        for path in files:
+            components = os.path.normpath(path).split(os.sep)
+            components[-1] = str(os.path.splitext(components[-1])[0])
+            components = [compo.lower() for compo in components]
+            file_components += components
+
+        seqs_ngrams = map(WordManager.allngram, file_components)
         counts = dict(Counter(chain.from_iterable(seqs_ngrams)))
+
+        # Remove bottom 10% of the list and single characters for speed
         max_key = max(counts, key=counts.get)
         cutoff = int(counts[max_key] / 10)
         counts = {key:value for key, value in counts.items() if value > cutoff and len(key) > 1}
 
-        # # keep top 20%
-        # listlist = sorted(list(counts.values()), reverse=True)
-        # for i in listlist:
-        #     print(i)
-        # # print()
-        # exit()
-        # qtr = sorted(list(counts.values()), reverse=True)[int(len(counts) / 4)]
-        # print(qtr)
-
-        # print("Here")
-        start_time = time.time()
-
-        # print(len(counts))
-        # exit()
-
-        # keepers = {}
-        # existing_keys = []
-
+        # Remove substrings of substrings
         substrings = sorted(list(counts.keys()), key=len, reverse=True)
-
-
         for substring in substrings:
-            # print(len(counts))
-            # print("--- %s seconds ---" % (time.time() - start_time))
             if substring not in counts:
                 continue
-            # if counts[substring] < 1:
-            #     counts.pop(substring)
-            #     continue
-            # if len(substring) < 2:
-            #     counts.pop(substring)
-            #     continue
             all_remaining_substrings = list(counts.keys())
-            # submatch = False
             for sub in all_remaining_substrings:
                 if sub != substring:
                     if sub in substring:
                         counts.pop(sub, None)
                     if substring in sub:
                         counts.pop(substring, None)
-                        # submatch = True
-                        # break
-            # if submatch:
-            #     counts.pop(substring)
-            #     continue
 
-            
-            # if 
-
-
-
-        # counts = dict(counts)
-        # counts = {key:value for key, value in counts.items() if value > 1 and len(key) > 1}
-        # substrings = list(counts.keys())
-        # unique_substrings = WordManager.substringSieve(list(counts.keys()))
-        # unique_substrings = WordManager.string_set(substrings)
-        # unique_substrings = WordManager.filtered_substrings(substrings)
-        # print("--- %s seconds ---" % (time.time() - start_time))
-        # print("There")
-
-
-        # print(len(counts))
-        # print(len(unique_substrings))
-        # exit()
-        # print(len(list(counts)))
-        # print(len(counts))
-        # Keep top 50
-        # highest = {}
-
-        # countpa = 0
-        # for item in counts.most_common():
-        #     highest_keys = highest.keys
-        #     highest_values = highest.values
-        #     substring = item[0]
-        #     count = item[1]
-
-        #     if not len(substring) > 2:
-        #         continue
-        #     if any(badstring in substring for badstring in [".", "-"]):
-        #         continue
-
-        #     lowest_key = None
-        #     lowest_count = 0
-        #     if len(highest) > 0:
-        #         lowest_key = min(highest, key=highest.get)
-        #         lowest_count = highest[lowest_key]
-
-
-        #     if len(highest) >= 50 and count > lowest_count:
-        #         highest.pop(lowest_key)
-        #         highest[substring] = count
-        #     elif len(highest) < 50:
-        #         highest[substring] = count
-
+        # Create top 50 grid
         xpos = 0
         ypos = 0
         for substring, count in counts.items():
-            # radiobutton = tk.Radiobutton(
-            #     self,
-            #     text=f"{substring} ({count})",
-            #     # variable=self.action,
-            #     # value="clean"
-            # )
+            if ypos > 4:
+                break
             radiobutton = tk.Checkbutton(
                 self,
-                text=f"{substring} ({count})",
-                # variable=self.operationoptions["autoremove"],
-                # onvalue=1, offvalue=0
+                text=f"{substring} ({count})"
             )
             radiobutton.grid(column=xpos, row=ypos, sticky="nwe")
             xpos += 1
             if xpos > 9:
                 xpos = 0
                 ypos += 1
-            # radiobutton.pack(side="left")
-
-
-        # for file in files:
-        #     print(file)
 
     @staticmethod 
     def allngram(seq: str, minn=1, maxn=None) -> Iterator[str]:
@@ -174,28 +101,5 @@ class WordManager(tk.LabelFrame):
     @staticmethod
     def ngram(seq: str, n: int) -> Iterator[str]:
         return (seq[i: i+n] for i in range(0, len(seq)-n+1))
-
-    # @staticmethod
-    # def filtered_substrings(string_list):
-    #     return list(filter(lambda x: [x for i in string_list if x in i and x != i] == [], string_list))
-
-    # @staticmethod
-    # def string_set(string_list):
-    #     return set(i for i in string_list if not any(i in s for s in string_list if i != s))
-    
-    # @staticmethod
-    # def allngram(seq: str) -> set:
-    #     lengths = range(len(seq))
-    #     ngrams = map(partial(WordManager.ngram, seq), lengths)
-    #     return set(chain.from_iterable(ngrams))
-
-    # @staticmethod
-    # def substringSieve(string_list):
-    #     string_list.sort(key=lambda s: len(s), reverse=True)
-    #     out = []
-    #     for s in string_list:
-    #         if not any([s in o for o in out]):
-    #             out.append(s)
-    #     return out
 
     

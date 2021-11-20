@@ -20,7 +20,7 @@ class DirectorySelector(tk.LabelFrame):
         textfield = tk.Entry(self, name="directory_entry")
         textfield.focus()
         reload_button = tk.Button(self, text='Reload', command= mainapp.load_directory)
-        open_button = tk.Button(self, text='Open directory', command= mainapp.open_directory)
+        open_button = tk.Button(self, text='Open directory', command= mainapp.load_new_directory)
         
         textfield.pack(side="left", fill="x", expand=True)
         reload_button.pack(side="left", fill=None, expand=False)

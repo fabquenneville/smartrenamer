@@ -15,13 +15,13 @@ class MainMenu(tk.Menu):
 
         file_menu = tk.Menu(self, tearoff=False)
         file_menu.add_command(
-            label='New'
+            label='Open directory',
+            command=mainapp.load_new_directory
         )
         file_menu.add_command(
-            label='Open directory',
-            command=mainapp.open_directory
+            label='Reload directory',
+            command=mainapp.load_directory
         )
-        file_menu.add_command(label='Close')
         file_menu.add_separator()
         file_menu.add_command(
             label='Exit',
