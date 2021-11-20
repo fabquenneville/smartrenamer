@@ -32,7 +32,8 @@ class MainApplication(tk.Tk):
         self.load_components()
         self.load_config()
         self.load_database()
-        self.load_directory()
+        if self.userconfig["main"]["selected_folder"]:
+            self.open_directory(self.userconfig["main"]["selected_folder"])
 
     def load_components(self):
         self.title("smartrenamer")
@@ -83,21 +84,11 @@ class MainApplication(tk.Tk):
     def load_database(self):
         pass
 
-    def load_directory(self):
-        if self.userconfig["main"]["selected_folder"]:
-            self.open_directory(self.userconfig["main"]["selected_folder"])
-
-    def open_directory(self, selected_folder = False):
-        if not selected_folder:
-            selected_folder = tkinter.filedialog.askdirectory()
-        if not selected_folder:
-            return False
-        self.userconfig["main"]["selected_folder"] = selected_folder
-        self.save_config()
-
-        entry = self.nametowidget("directoryselector.directory_entry")
-        entry.delete(0,"end")
-        entry.insert(0, selected_folder)
+    def load_directory(self, save = True):
+        selected_folder = self.nametowidget("directoryselector.directory_entry").get()
+        if save:
+            self.userconfig["main"]["selected_folder"] = selected_folder
+            self.save_config()
 
         content = get_content(selected_folder, absolute=False)
 
@@ -116,3 +107,20 @@ class MainApplication(tk.Tk):
         for file in content:
             before_list.insert(tk.END, str(file))
             after_list.insert(tk.END, str(file))
+
+    def open_directory(self, selected_folder = False, save = True):
+        if not selected_folder:
+            selected_folder = tkinter.filedialog.askdirectory()
+        if not selected_folder:
+            return False
+        if save:
+            self.userconfig["main"]["selected_folder"] = selected_folder
+            self.save_config()
+
+        entry = self.nametowidget("directoryselector.directory_entry")
+        entry.delete(0,"end")
+        entry.insert(0, selected_folder)
+
+
+
+

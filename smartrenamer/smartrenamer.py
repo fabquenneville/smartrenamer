@@ -11,6 +11,7 @@ except ModuleNotFoundError:
 
 def main():
     mainapp = MainApplication()
+    mainapp.load_directory()
     mainapp.mainloop()
 
 
