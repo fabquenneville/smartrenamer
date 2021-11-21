@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+import math
+import json
+import re
 import os
 import tkinter as tk
 from functools import partial
@@ -34,7 +37,7 @@ class WordManager(tk.LabelFrame):
         new_from = mainapp.nametowidget("optionselector.operationoptionsselector.unify_separators_from").get()
         new_to = mainapp.nametowidget("optionselector.operationoptionsselector.unify_separators_to").get()
 
-        if separators_from != new_from or separators_to != new_to and new_from and new_to:
+        if (separators_from != new_from or separators_to != new_to) and new_from and new_to:
             mainapp.update_separators(new_from, new_to)
             separators_from, separators_to = new_from, new_to
         return separators_from, separators_to
@@ -47,21 +50,38 @@ class WordManager(tk.LabelFrame):
             child.destroy()
 
         separators_from, separators_to = self.get_separators()
+        separators_from_regex = '|'.join(map(re.escape, separators_from))
 
         file_components = []
         for path in files:
+            subcomponents = []
             components = os.path.normpath(path).split(os.sep)
             components[-1] = str(os.path.splitext(components[-1])[0])
             components = [compo.lower() for compo in components]
-            file_components += components
+            for compo in components:
+                subcomponents += re.split(separators_from_regex, compo)
+            file_components += subcomponents
+        
+        # print(json.dumps(file_components, indent=4))
+        # exit()
+        component_counts = dict(Counter(file_components))
 
         seqs_ngrams = map(WordManager.allngram, file_components)
         counts = dict(Counter(chain.from_iterable(seqs_ngrams)))
 
+        counts.update(component_counts)
+        # print(counts)
+        # print(json.dumps(counts, sort_keys=True, indent=4))
+        # print(json.dumps(counts, indent=4))
+        # exit()
+        # print(len(counts))
+        # exit()
         # Remove bottom 10% of the list and single characters for speed
-        max_key = max(counts, key=counts.get)
-        cutoff = int(counts[max_key] / 10)
-        counts = {key:value for key, value in counts.items() if value > cutoff and len(key) > 1}
+        # max_key = max(counts, key=counts.get)
+        # cutoff = int(counts[max_key] / 10)
+        cutoff = 1
+        counts = {key:value for key, value in counts.items() if value > cutoff and len(key) > 1 and not key.isnumeric()}
+        # print(len(counts))
 
         # Remove substrings of substrings
         substrings = sorted(list(counts.keys()), key=len, reverse=True)
@@ -73,18 +93,22 @@ class WordManager(tk.LabelFrame):
                 if sub != substring:
                     if sub in substring:
                         counts.pop(sub, None)
+                        # print(f"Removing {sub} because it is in {substring}")
                     if substring in sub:
                         counts.pop(substring, None)
+                        # print(f"Removing {substring} because it is in {sub}")
+        # print(len(counts))
 
+        top50 = sorted(counts, key=counts.get, reverse=True)[:50]
         # Create top 50 grid
         xpos = 0
         ypos = 0
-        for substring, count in counts.items():
+        for k in top50:
             if ypos > 4:
                 break
             radiobutton = tk.Checkbutton(
                 self,
-                text=f"{substring} ({count})"
+                text=f"{k} ({counts[k]})"
             )
             radiobutton.grid(column=xpos, row=ypos, sticky="nwe")
             xpos += 1
