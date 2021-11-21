@@ -55,6 +55,8 @@ class OptionSelector(tk.LabelFrame):
                 "unify_separators":         tk.IntVar(),
                 "unify_separators_from":    tk.StringVar(),
                 "unify_separators_to":      tk.StringVar(),
+                "unify_brackets":           tk.IntVar(),
+                "unify_brackets_type":           tk.StringVar(),
             }
 
             autoremove_checkbutton = tk.Checkbutton(
@@ -97,12 +99,56 @@ class OptionSelector(tk.LabelFrame):
             if separators_to:
                 unify_separators_to.insert(tk.END, separators_to)
 
+            unify_brackets_checkbutton = tk.Checkbutton(
+                self.operationoptionsselector,
+                text = "Unify Brackets",
+                variable = self.operationoptions["unify_brackets"],
+                onvalue = 1, offvalue=0
+            )
+            unify_brackets_checkbutton.select()
+
+            unify_brackets_parentheses = tk.Radiobutton(
+                self.operationoptionsselector,
+                text="()",
+                variable = self.operationoptions["unify_brackets_type"],
+                value="parentheses"
+            )
+            unify_brackets_parentheses.select()
+            unify_brackets_squares = tk.Radiobutton(
+                self.operationoptionsselector,
+                text="[]",
+                variable = self.operationoptions["unify_brackets_type"],
+                value="squares"
+            )
+            unify_brackets_curly = tk.Radiobutton(
+                self.operationoptionsselector,
+                text="{}",
+                variable = self.operationoptions["unify_brackets_type"],
+                value="curly"
+            )
+            unify_brackets_angles = tk.Radiobutton(
+                self.operationoptionsselector,
+                text="<>",
+                variable = self.operationoptions["unify_brackets_type"],
+                value="angles"
+            )
+
+
+
+
+
+
             autoremove_checkbutton.pack(side="left")
             unify_separators_checkbutton.pack(side="left")
             unify_separators_from_label.pack(side="left")
             unify_separators_from.pack(side="left")
             unify_separators_to_label.pack(side="left")
             unify_separators_to.pack(side="left")
+            unify_brackets_checkbutton.pack(side="left")
+            unify_brackets_parentheses.pack(side="left")
+            unify_brackets_squares.pack(side="left")
+            unify_brackets_curly.pack(side="left")
+            unify_brackets_angles.pack(side="left")
         
 
     def get_action(self):

@@ -50,7 +50,11 @@ class WordManager(tk.LabelFrame):
             child.destroy()
 
         separators_from, separators_to = self.get_separators()
-        separators_from_regex = '|'.join(map(re.escape, separators_from))
+        separators_from_regex = separators_from + separators_to + "()[]{}<>"
+        separators_from_regex = '|'.join(map(re.escape, separators_from_regex))
+
+        # print(separators_from_regex)
+        # exit()
 
         file_components = []
         for path in files:
@@ -71,11 +75,11 @@ class WordManager(tk.LabelFrame):
 
         counts.update(component_counts)
         # print(counts)
+        # print(len(counts))
         # print(json.dumps(counts, sort_keys=True, indent=4))
         # print(json.dumps(counts, indent=4))
         # exit()
-        # print(len(counts))
-        # exit()
+        
         # Remove bottom 10% of the list and single characters for speed
         # max_key = max(counts, key=counts.get)
         # cutoff = int(counts[max_key] / 10)
