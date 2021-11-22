@@ -21,13 +21,61 @@ class WordManager(tk.LabelFrame):
             *args, **kwargs
         )
 
-        for i in range(10):
-            self.grid_columnconfigure(i, weight=1)
-            if i < 5:
-                self.grid_rowconfigure(i, weight=1)
-
         self.action = tk.StringVar()
+        self.action_frame = None
+        self.word_container_frame = None
+        self.word_checkboxes = {}
+
+        self.load_components()
     
+    def select_all_words(self):
+        for word, word_data in self.word_checkboxes.items():
+            word_data["checkbox"].select()
+    
+    def deselect_all_words(self):
+        for word, word_data in self.word_checkboxes.items():
+            word_data["checkbox"].deselect()
+    
+    def save_words(self):
+        print("In save_words")
+        for word, word_data in self.word_checkboxes.items():
+            print(f"{word}: {word_data['value'].get()}")
+    
+    def open_manager_window(self):
+        print("In open_manager_window")
+
+    def load_components(self):
+
+        # self.word_container_frame = tk.LabelFrame(self, text="Words", name="word_container_frame", pady=10, padx=10)
+        self.word_container_frame = tk.Frame(self, name="word_container_frame", padx=10)
+
+        for i in range(10):
+            self.word_container_frame.grid_columnconfigure(i, weight=1)
+            if i < 5:
+                self.word_container_frame.grid_rowconfigure(i, weight=1)
+
+        # self.action_frame = tk.LabelFrame(self, text="Actions", name="action_frame", pady=10, padx=10)
+        self.action_frame = tk.Frame(self, name="action_frame", padx=10)
+
+        buttons = [
+            tk.Button(self.action_frame, text='Select all', command= self.select_all_words),
+            tk.Button(self.action_frame, text='Deselect all', command= self.deselect_all_words),
+            tk.Button(self.action_frame, text='Remove', command= self.save_words),
+            tk.Button(self.action_frame, text='Ignore', command= self.save_words),
+            tk.Button(self.action_frame, text='Reset', command= self.save_words),
+            tk.Button(self.action_frame, text='Manage', command= self.open_manager_window)
+        ]
+
+        self.action_frame.pack(side="top", fill="both", expand=True)
+
+        self.action_frame.grid_rowconfigure(0, weight=1)
+        for i in range(len(buttons)):
+            buttons[i].grid(row = 0, column = i, sticky = "ew")
+            self.action_frame.grid_columnconfigure(i, weight=1)
+
+        self.word_container_frame.pack(side="left", fill="both", expand=True)
+        
+        
     def get_separators(self):
         mainapp = self.winfo_toplevel()
         config = mainapp.get_config()
@@ -46,8 +94,11 @@ class WordManager(tk.LabelFrame):
         return self.action.get()
 
     def load_words(self, files):
-        for child in self.winfo_children():
-            child.destroy()
+        if self.word_container_frame:
+            for child in self.word_container_frame.winfo_children():
+                child.destroy()
+        self.word_checkboxes = {}
+        
 
         separators_from, separators_to = self.get_separators()
         separators_from_regex = separators_from + separators_to + "()[]{}<>"
@@ -79,7 +130,7 @@ class WordManager(tk.LabelFrame):
         # print(json.dumps(counts, sort_keys=True, indent=4))
         # print(json.dumps(counts, indent=4))
         # exit()
-        
+
         # Remove bottom 10% of the list and single characters for speed
         # max_key = max(counts, key=counts.get)
         # cutoff = int(counts[max_key] / 10)
@@ -110,11 +161,19 @@ class WordManager(tk.LabelFrame):
         for k in top50:
             if ypos > 4:
                 break
-            radiobutton = tk.Checkbutton(
-                self,
-                text=f"{k} ({counts[k]})"
+
+            self.word_checkboxes[k] = {
+                "word": k,
+                "checkbox": None,
+                "value": tk.IntVar()
+            }
+            self.word_checkboxes[k]["checkbox"] = tk.Checkbutton(
+                self.word_container_frame,
+                text=f"{k} ({counts[k]})",
+                variable = self.word_checkboxes[k]["value"],
+                onvalue = 1, offvalue = 0
             )
-            radiobutton.grid(column=xpos, row=ypos, sticky="nwe")
+            self.word_checkboxes[k]["checkbox"].grid(column=xpos, row=ypos, sticky="nwe")
             xpos += 1
             if xpos > 9:
                 xpos = 0

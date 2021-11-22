@@ -8,7 +8,7 @@ class OperationSelector(tk.LabelFrame):
             self, parent,
             text="Operations",
             name="operationselector",
-            padx=10, pady=10,
+            padx=10,
             *args, **kwargs
         )
 

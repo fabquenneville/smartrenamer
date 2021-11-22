@@ -11,7 +11,7 @@ class OptionSelector(tk.LabelFrame):
             self, parent,
             text="Options",
             name="optionselector",
-            padx=10, pady=10,
+            padx=10,
             *args, **kwargs
         )
         self.grid_rowconfigure(0, weight=1)
@@ -31,7 +31,7 @@ class OptionSelector(tk.LabelFrame):
             self,
             text="Operation options",
             name="operationoptionsselector",
-            padx=10, pady=10,
+            padx=10,
         )
         self.wordmanager = WordManager(self)
 
