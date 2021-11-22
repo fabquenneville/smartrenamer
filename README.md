@@ -1,14 +1,14 @@
 # smartrenamer
 
-smartrenamer is a Python command line tool
+smartrenamer is a tool used to automatically clean and unify the file names in a file tree.
 
 ## Documentation
 
-The documentation is available on the following [link]()
+The documentation is available on the following [link](https://fabquenneville.github.io/smartrenamer/)
 
 ## Releases
 
-Instalation instructions are found [here]().
+Instalation instructions are found [here](https://fabquenneville.github.io/smartrenamer/).
 
 ## Usage
 
