@@ -11,6 +11,7 @@ from .comparator import Comparator
 from .directoryselector import DirectorySelector
 from .mainmenu import MainMenu
 from .options import Options
+from .wordmanager import WordManager
 from .tools import get_content
 
 class MainApplication(tk.Tk):
@@ -25,7 +26,7 @@ class MainApplication(tk.Tk):
         self.userconfig = {
             "main": {
                 "selected_folder": None,
-                "separators_from": ". -_",
+                "separators_from": MainApplication.get_separators_default(),
                 "separators_to": " ",
             }
         }
@@ -57,11 +58,11 @@ class MainApplication(tk.Tk):
     @staticmethod
     def get_config_path(createfolders = False):
         homepath = str(Path.home())
-        if not homepath[-1] == "/":
-            homepath += "/"
-        config_folder_path = homepath + ".config/"
-        app_config_folder_path = config_folder_path + "smartrenamer/"
-        app_config_path = app_config_folder_path + "config.json"
+        if not homepath[-1] == os.sep:
+            homepath += os.sep
+        config_folder_path = os.path.join(homepath, ".config")
+        app_config_folder_path = os.path.join(config_folder_path, "smartrenamer")
+        app_config_path = os.path.join(app_config_folder_path, "config.json")
 
         if not os.path.isdir(config_folder_path) and createfolders:
             os.mkdir(config_folder_path)
@@ -74,11 +75,11 @@ class MainApplication(tk.Tk):
     @staticmethod
     def get_database_path(createfolders = False):
         homepath = str(Path.home())
-        if not homepath[-1] == "/":
-            homepath += "/"
-        config_folder_path = homepath + ".config/"
-        app_config_folder_path = config_folder_path + "smartrenamer/"
-        app_database_path = app_config_folder_path + "smartrenamer.sqlite3"
+        if not homepath[-1] == os.sep:
+            homepath += os.sep
+        config_folder_path = os.path.join(homepath, ".config")
+        app_config_folder_path = os.path.join(config_folder_path, "smartrenamer")
+        app_database_path = os.path.join(app_config_folder_path, "smartrenamer.sqlite3")
 
         if not os.path.isdir(config_folder_path) and createfolders:
             os.mkdir(config_folder_path)
@@ -152,19 +153,22 @@ class MainApplication(tk.Tk):
         entry.delete(0,"end")
         entry.insert(0, directory)
 
-    def load_directory(self):
+    def get_files_list(self):
         selected_folder = self.userconfig["main"]["selected_folder"]
         if not selected_folder:
             return False
 
-        content = get_content(selected_folder, absolute=False)
+        return get_content(selected_folder, absolute=False)
+
+    def load_directory(self):
+        content = self.get_files_list()
 
         options = self.nametowidget("options")
         action = options.get_action()
 
         if action == "clean":
             wordmanager = self.nametowidget("options.wordmanager")
-            wordmanager.load_words(content)
+            wordmanager.load_words()
         
         before_list = self.nametowidget("comparator_frame.before_frame.before_list")
         after_list = self.nametowidget("comparator_frame.after_frame.after_list")
@@ -174,5 +178,24 @@ class MainApplication(tk.Tk):
 
         for file in content:
             before_list.insert(tk.END, str(file))
-            after_list.insert(tk.END, str(file))
+            after_list.insert(tk.END, wordmanager.clean_filename(str(file)))
 
+    @staticmethod
+    def get_separators_default():
+        return ". -_"
+
+    def get_separators_all(self):
+        separators = ""
+
+        for separator in self.userconfig["main"]["separators_from"]:
+            if separator not in separators:
+                separators += separator
+
+        for separator in self.userconfig["main"]["separators_to"]:
+            if separator not in separators:
+                separators += separator
+        
+        return separators
+
+
+        

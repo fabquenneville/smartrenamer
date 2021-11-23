@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 
 from pathlib import Path
@@ -40,8 +41,8 @@ def get_content(path, directories = False, absolute = True):
         folderlist: Operations success
     '''
     
-    if not path[-1] == "/":
-        path += "/"
+    if not path[-1] == os.sep:
+        path += os.sep
     
     pathobj = Path(path)
     items = None
@@ -53,6 +54,6 @@ def get_content(path, directories = False, absolute = True):
     
     if not absolute:
         for i in range(len(items)):
-            items[i] = items[i].replace(path, "./")
+            items[i] = items[i].replace(path, "." + os.sep)
     
     return items

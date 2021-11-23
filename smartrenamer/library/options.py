@@ -186,5 +186,18 @@ class Options(tk.LabelFrame):
                 bracket.pack(side="left")
         
 
+    def get_bracketname(self):
+        return self.operationoptions["unify_brackets_type"].get()
+
+    def get_operationoptions(self):
+        return {
+            "autoremove":               self.operationoptions["autoremove"].get(),
+            "unify_separators":         self.operationoptions["unify_separators"].get(),
+            "unify_separators_from":    self.operationoptions["unify_separators_from"].get(),
+            "unify_separators_to":      self.operationoptions["unify_separators_to"].get(),
+            "unify_brackets":           self.operationoptions["unify_brackets"].get(),
+            "unify_brackets_type":      self.operationoptions["unify_brackets_type"].get(),
+        }
+
     def get_action(self):
         return self.action.get()

@@ -27,7 +27,8 @@ class WordManager(tk.LabelFrame):
         self.word_container_frame = None
         self.word_checkboxes = {}
         self.words = {}
-
+        
+        self.load_db_words()
         self.load_components()
     
     def select_all_words(self):
@@ -46,6 +47,7 @@ class WordManager(tk.LabelFrame):
                     "remove" : 1
                 }
         self.save_words()
+        self.load_words()
     
     def ignore_words(self):
         for word, word_data in self.word_checkboxes.items():
@@ -55,6 +57,7 @@ class WordManager(tk.LabelFrame):
                     "remove" : 0
                 }
         self.save_words()
+        self.load_words()
     
     def save_words(self):
         mainapp = self.winfo_toplevel()
@@ -88,8 +91,6 @@ class WordManager(tk.LabelFrame):
         print("In open_manager_window")
 
     def load_components(self):
-
-        # self.word_container_frame = tk.LabelFrame(self, text="Words", name="word_container_frame", pady=10, padx=10)
         self.word_container_frame = tk.Frame(self, name="word_container_frame", padx=10)
 
         for i in range(10):
@@ -97,7 +98,6 @@ class WordManager(tk.LabelFrame):
             if i < 5:
                 self.word_container_frame.grid_rowconfigure(i, weight=1)
 
-        # self.action_frame = tk.LabelFrame(self, text="Actions", name="action_frame", pady=10, padx=10)
         self.action_frame = tk.Frame(self, name="action_frame", padx=10)
 
         buttons = [
@@ -117,16 +117,13 @@ class WordManager(tk.LabelFrame):
             self.action_frame.grid_columnconfigure(i, weight=1)
 
         self.word_container_frame.pack(side="left", fill="both", expand=True)
-        
-        
+    
     def get_separators(self):
         mainapp = self.winfo_toplevel()
         config = mainapp.get_config()
         separators_from = config["main"]["separators_from"]
         separators_to = config["main"]["separators_to"]
 
-        # print(mainapp.nametowidget("options.operationoptionsselector").winfo_children())
-        # exit()
         new_from = mainapp.nametowidget("options.operationoptionsselector.unify_separators_from").get()
         new_to = mainapp.nametowidget("options.operationoptionsselector.unify_separators_to").get()
 
@@ -134,25 +131,55 @@ class WordManager(tk.LabelFrame):
             mainapp.update_separators(new_from, new_to)
             separators_from, separators_to = new_from, new_to
         return separators_from, separators_to
+    
+    def get_brackets(self):
+        mainapp = self.winfo_toplevel()
+        bracketname = mainapp.nametowidget("options").get_bracketname()
+        inner_bracket = ""
+        outter_bracket = ""
+
+        if bracketname == "parentheses":
+            inner_bracket = "("
+            outter_bracket = ")"
+        elif bracketname == "squares":
+            inner_bracket = "["
+            outter_bracket = "]"
+        elif bracketname == "curly":
+            inner_bracket = "{"
+            outter_bracket = "}"
+        elif bracketname == "angles":
+            inner_bracket = "<"
+            outter_bracket = ">"
+        
+        return inner_bracket, outter_bracket
 
     def get_action(self):
         return self.action.get()
 
-    def load_words(self, files):
+    def load_db_words(self):
+        mainapp = self.winfo_toplevel()
+        sqlite = mainapp.get_dbcon()
+        cursor = sqlite.cursor()
+
+        cursor.execute("SELECT * FROM words")
+        words = cursor.fetchall()
+
+        for word in words:
+            self.words[word["word"]] = dict(word)
+        
+    def load_words(self):
+        mainapp = self.winfo_toplevel()
         if self.word_container_frame:
             for child in self.word_container_frame.winfo_children():
                 child.destroy()
         self.word_checkboxes = {}
         
-
         separators_from, separators_to = self.get_separators()
         separators_from_regex = separators_from + separators_to + "()[]{}<>"
         separators_from_regex = '|'.join(map(re.escape, separators_from_regex))
 
-        # print(separators_from_regex)
-        # exit()
-
         file_components = []
+        files = mainapp.get_files_list()
         for path in files:
             subcomponents = []
             components = os.path.normpath(path).split(os.sep)
@@ -162,26 +189,15 @@ class WordManager(tk.LabelFrame):
                 subcomponents += re.split(separators_from_regex, compo)
             file_components += subcomponents
         
-        # print(json.dumps(file_components, indent=4))
-        # exit()
         component_counts = dict(Counter(file_components))
 
         seqs_ngrams = map(WordManager.allngram, file_components)
         counts = dict(Counter(chain.from_iterable(seqs_ngrams)))
 
         counts.update(component_counts)
-        # print(counts)
-        # print(len(counts))
-        # print(json.dumps(counts, sort_keys=True, indent=4))
-        # print(json.dumps(counts, indent=4))
-        # exit()
-
-        # Remove bottom 10% of the list and single characters for speed
-        # max_key = max(counts, key=counts.get)
-        # cutoff = int(counts[max_key] / 10)
+        
         cutoff = 1
         counts = {key:value for key, value in counts.items() if value > cutoff and len(key) > 1 and not key.isnumeric()}
-        # print(len(counts))
 
         # Remove substrings of substrings
         substrings = sorted(list(counts.keys()), key=len, reverse=True)
@@ -193,14 +209,15 @@ class WordManager(tk.LabelFrame):
                 if sub != substring:
                     if sub in substring:
                         counts.pop(sub, None)
-                        # print(f"Removing {sub} because it is in {substring}")
                     if substring in sub:
                         counts.pop(substring, None)
-                        # print(f"Removing {substring} because it is in {sub}")
-        # print(len(counts))
 
-        top50 = sorted(counts, key=counts.get, reverse=True)[:50]
+        for word in self.words.keys():
+            counts.pop(word, None)
+
         # Create top 50 grid
+        top50 = sorted(counts, key=counts.get, reverse=True)[:50]
+
         xpos = 0
         ypos = 0
         for k in top50:
@@ -266,3 +283,37 @@ class WordManager(tk.LabelFrame):
         if (cursor.fetchone()):
             return True
         return False
+
+    def clean_filename(self, original_filename):
+        new_filename = original_filename
+
+        separators_from, separators_to = self.get_separators()
+        separators_all = separators_from + separators_to
+
+        inner_bracket, outter_bracket = self.get_brackets()
+        brackets = [
+            ("(", ")"),
+            ("[", "]"),
+            ("{", "}"),
+            ("<", ">"),
+        ]
+        for bracket in brackets:
+            if bracket[0] in original_filename and bracket[1] in original_filename and bracket[0] != inner_bracket and bracket[1] != outter_bracket:
+                ib = inner_bracket
+                ob = outter_bracket
+
+                ib_pos = new_filename.find(bracket[0])
+                if ib_pos != 2 and new_filename[ib_pos - 1] != os.sep:
+                    if new_filename[ib_pos - 1] not in separators_all:
+                        ib = separators_to + inner_bracket
+                
+                ob_pos = new_filename.find(bracket[1])
+                if ob_pos != len(new_filename) - 1 and new_filename[ib_pos + 1] != os.sep:
+                    if new_filename[ob_pos + 1] not in separators_all:
+                        ob = outter_bracket + separators_to
+
+                new_filename = new_filename.replace(bracket[0], ib, 1)
+                new_filename = new_filename.replace(bracket[1], ob, 1)
+                return self.clean_filename(new_filename)
+
+        return new_filename
