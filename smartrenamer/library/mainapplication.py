@@ -162,27 +162,28 @@ class MainApplication(tk.Tk):
 
     def load_directory(self):
         content = self.get_files_list()
-
         options = self.nametowidget("options")
         action = options.get_action()
-
-        if action == "clean":
-            wordmanager = self.nametowidget("options.wordmanager")
-            wordmanager.load_words()
-        
         before_list = self.nametowidget("comparator_frame.before_frame.before_list")
         after_list = self.nametowidget("comparator_frame.after_frame.after_list")
 
         before_list.delete(0,'end')
         after_list.delete(0,'end')
 
+        if action == "clean":
+            wordmanager = self.nametowidget("options.wordmanager")
+            wordmanager.load_words()
+
         for file in content:
             before_list.insert(tk.END, str(file))
-            after_list.insert(tk.END, wordmanager.clean_filename(str(file)))
+            if action == "clean":
+                after_list.insert(tk.END, wordmanager.clean_filename(str(file)))
+            else:
+                after_list.insert(tk.END, str(file))
 
     @staticmethod
     def get_separators_default():
-        return ". -_"
+        return ". -_,"
 
     def get_separators_all(self):
         separators = ""

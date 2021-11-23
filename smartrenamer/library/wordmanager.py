@@ -18,12 +18,13 @@ class WordManager(tk.LabelFrame):
             self, parent,
             text="Word manager",
             name="wordmanager",
-            padx=10, pady=10,
+            # padx=10, pady=10,
             *args, **kwargs
         )
 
         self.action = tk.StringVar()
         self.action_frame = None
+        self.managed_word = tk.StringVar()
         self.word_container_frame = None
         self.word_checkboxes = {}
         self.words = {}
@@ -48,6 +49,18 @@ class WordManager(tk.LabelFrame):
                 }
         self.save_words()
         self.load_words()
+
+    
+    def remove_word(self):
+        self.words[self.managed_word.get()] = {
+            "word": self.managed_word.get(),
+            "remove" : 1
+        }
+        self.save_words()
+        self.load_words()
+
+        word_entry = self.nametowidget("action_frame.individual_word_frame.individual_word_entry")
+        word_entry.delete(0,'end')
     
     def ignore_words(self):
         for word, word_data in self.word_checkboxes.items():
@@ -58,6 +71,17 @@ class WordManager(tk.LabelFrame):
                 }
         self.save_words()
         self.load_words()
+    
+    def ignore_word(self):
+        self.words[self.managed_word.get()] = {
+            "word": self.managed_word.get(),
+            "remove" : 0
+        }
+        self.save_words()
+        self.load_words()
+
+        word_entry = self.nametowidget("action_frame.individual_word_frame.individual_word_entry")
+        word_entry.delete(0,'end')
     
     def save_words(self):
         mainapp = self.winfo_toplevel()
@@ -91,32 +115,57 @@ class WordManager(tk.LabelFrame):
         print("In open_manager_window")
 
     def load_components(self):
-        self.word_container_frame = tk.Frame(self, name="word_container_frame", padx=10)
-
-        for i in range(10):
-            self.word_container_frame.grid_columnconfigure(i, weight=1)
-            if i < 5:
-                self.word_container_frame.grid_rowconfigure(i, weight=1)
-
+        # Action bar
         self.action_frame = tk.Frame(self, name="action_frame", padx=10)
-
-        buttons = [
+        components = [
             tk.Button(self.action_frame, text='Select all', command= self.select_all_words),
             tk.Button(self.action_frame, text='Deselect all', command= self.deselect_all_words),
             tk.Button(self.action_frame, text='Remove', command= self.remove_words),
             tk.Button(self.action_frame, text='Ignore', command= self.ignore_words),
             tk.Button(self.action_frame, text='Reset saved words', command= self.reset_words),
-            tk.Button(self.action_frame, text='Manage', command= self.open_manager_window)
+            tk.Button(self.action_frame, text='Manage', command= self.open_manager_window),
+            tk.LabelFrame(self.action_frame, name="individual_word_frame", text="Add individual word")
         ]
+        self.action_frame.grid_rowconfigure(0, weight=1)
+        for i in range(len(components)):
+            if components[i]._name == "individual_word_frame":
+                subcomponents = [
+                    tk.Label(
+                        components[i],
+                        text = "Word:"
+                    ),
+                    tk.Entry(
+                        components[i],
+                        name = "individual_word_entry",
+                        textvariable = self.managed_word
+                    ),
+                    tk.Button(components[i], text = 'Remove', command = self.remove_word),
+                    tk.Button(components[i], text = 'Ignore', command = self.ignore_word),
+                ]
+                components[i].grid_rowconfigure(0, weight=1)
+                for j in range(len(subcomponents)):
+                    subcomponents[j].grid(row = 0, column = j, sticky = "ew")
+                    components[i].grid_columnconfigure(j, weight=1)
+                # for compo in subcomponents:
+                #     compo.pack(side="left")
+
+
+                components[i].grid(row = 0, column = i, sticky = "ew")
+                self.action_frame.grid_columnconfigure(i, weight=2)
+            else:
+                components[i].grid(row = 0, column = i, sticky = "ew")
+                self.action_frame.grid_columnconfigure(i, weight=1)
+
+        # Word grid
+        self.word_container_frame = tk.Frame(self, name="word_container_frame", padx=10)
+        for i in range(10):
+            self.word_container_frame.grid_columnconfigure(i, weight=1)
+            if i < 5:
+                self.word_container_frame.grid_rowconfigure(i, weight=1)
 
         self.action_frame.pack(side="top", fill="both", expand=True)
-
-        self.action_frame.grid_rowconfigure(0, weight=1)
-        for i in range(len(buttons)):
-            buttons[i].grid(row = 0, column = i, sticky = "ew")
-            self.action_frame.grid_columnconfigure(i, weight=1)
-
-        self.word_container_frame.pack(side="left", fill="both", expand=True)
+        self.word_container_frame.pack(side="top", fill="both", expand=True)
+        # self.individual_word_frame.pack(side="top", fill="both", expand=True)
     
     def get_separators(self):
         mainapp = self.winfo_toplevel()
@@ -124,37 +173,59 @@ class WordManager(tk.LabelFrame):
         separators_from = config["main"]["separators_from"]
         separators_to = config["main"]["separators_to"]
 
-        new_from = mainapp.nametowidget("options.operationoptionsselector.unify_separators_from").get()
-        new_to = mainapp.nametowidget("options.operationoptionsselector.unify_separators_to").get()
+        new_from = mainapp.nametowidget("options.operationoptionsselector.unify_separators_frame.unify_separators_from").get()
+        new_to = mainapp.nametowidget("options.operationoptionsselector.unify_separators_frame.unify_separators_to").get()
 
         if (separators_from != new_from or separators_to != new_to) and new_from and new_to:
             mainapp.update_separators(new_from, new_to)
             separators_from, separators_to = new_from, new_to
         return separators_from, separators_to
     
+    @staticmethod
+    def get_all_brackets(format = "tupples"):
+        if format == "string":
+            return "()[]{}<>"
+        elif format == "dict":
+            return {
+                "parentheses":  ("(", ")"),
+                "squares":      ("[", "]"),
+                "curly":        ("{", "}"),
+                "angles":       ("<", ">"),
+            }
+        return [
+            ("(", ")"),
+            ("[", "]"),
+            ("{", "}"),
+            ("<", ">"),
+        ]
+
     def get_brackets(self):
         mainapp = self.winfo_toplevel()
         bracketname = mainapp.nametowidget("options").get_bracketname()
         inner_bracket = ""
         outter_bracket = ""
 
-        if bracketname == "parentheses":
-            inner_bracket = "("
-            outter_bracket = ")"
-        elif bracketname == "squares":
-            inner_bracket = "["
-            outter_bracket = "]"
-        elif bracketname == "curly":
-            inner_bracket = "{"
-            outter_bracket = "}"
-        elif bracketname == "angles":
-            inner_bracket = "<"
-            outter_bracket = ">"
+        all_brackets = WordManager.get_all_brackets("dict")
+
+        for bname, brackets in all_brackets.items():
+            if bracketname == bname:
+                inner_bracket = brackets[0]
+                outter_bracket = brackets[1]
         
         return inner_bracket, outter_bracket
 
     def get_action(self):
         return self.action.get()
+
+    def get_removables(self):
+        removables = []
+        # print(json.dumps(self.words, indent=4))
+        # print(json.dumps(self.words.values(), indent=4))
+        for word, word_data in self.words.items():
+            # print(word_data)
+            if word_data["remove"] == 1:
+                removables.append(word)
+        return removables
 
     def load_db_words(self):
         mainapp = self.winfo_toplevel()
@@ -173,10 +244,11 @@ class WordManager(tk.LabelFrame):
             for child in self.word_container_frame.winfo_children():
                 child.destroy()
         self.word_checkboxes = {}
+        # removables = self.get_removables()
         
         separators_from, separators_to = self.get_separators()
-        separators_from_regex = separators_from + separators_to + "()[]{}<>"
-        separators_from_regex = '|'.join(map(re.escape, separators_from_regex))
+        separators_all = separators_from + separators_to + "()[]{}<>"
+        separators_from_regex = '|'.join(map(re.escape, separators_all))
 
         file_components = []
         files = mainapp.get_files_list()
@@ -195,6 +267,8 @@ class WordManager(tk.LabelFrame):
         counts = dict(Counter(chain.from_iterable(seqs_ngrams)))
 
         counts.update(component_counts)
+        # for removable in removables:
+        #     counts.pop(removable,)
         
         cutoff = 1
         counts = {key:value for key, value in counts.items() if value > cutoff and len(key) > 1 and not key.isnumeric()}
@@ -211,6 +285,12 @@ class WordManager(tk.LabelFrame):
                         counts.pop(sub, None)
                     if substring in sub:
                         counts.pop(substring, None)
+                    # subcount = counts.get(sub)
+                    # substringcount = counts.get(substring)
+                    # if sub in substring and subcount <= substringcount:
+                    #     counts.pop(sub, None)
+                    # if substring in sub and substringcount <= subcount:
+                    #     counts.pop(substring, None)
 
         for word in self.words.keys():
             counts.pop(word, None)
@@ -284,36 +364,123 @@ class WordManager(tk.LabelFrame):
             return True
         return False
 
-    def clean_filename(self, original_filename):
-        new_filename = original_filename
-
+    def clean_filename_brackets(self, filename):
         separators_from, separators_to = self.get_separators()
         separators_all = separators_from + separators_to
 
         inner_bracket, outter_bracket = self.get_brackets()
-        brackets = [
-            ("(", ")"),
-            ("[", "]"),
-            ("{", "}"),
-            ("<", ">"),
-        ]
+        brackets = WordManager.get_all_brackets()
+
         for bracket in brackets:
-            if bracket[0] in original_filename and bracket[1] in original_filename and bracket[0] != inner_bracket and bracket[1] != outter_bracket:
+            if bracket[0] in filename and bracket[1] in filename and bracket[0] != inner_bracket and bracket[1] != outter_bracket:
                 ib = inner_bracket
                 ob = outter_bracket
 
-                ib_pos = new_filename.find(bracket[0])
-                if ib_pos != 2 and new_filename[ib_pos - 1] != os.sep:
-                    if new_filename[ib_pos - 1] not in separators_all:
+                ib_pos = filename.find(bracket[0])
+                if ib_pos != 2 and filename[ib_pos - 1] != os.sep:
+                    if filename[ib_pos - 1] not in separators_all:
                         ib = separators_to + inner_bracket
                 
-                ob_pos = new_filename.find(bracket[1])
-                if ob_pos != len(new_filename) - 1 and new_filename[ib_pos + 1] != os.sep:
-                    if new_filename[ob_pos + 1] not in separators_all:
+                ob_pos = filename.find(bracket[1])
+                if ob_pos != len(filename) - 1 and filename[ib_pos + 1] != os.sep:
+                    if filename[ob_pos + 1] not in separators_all:
                         ob = outter_bracket + separators_to
 
-                new_filename = new_filename.replace(bracket[0], ib, 1)
-                new_filename = new_filename.replace(bracket[1], ob, 1)
-                return self.clean_filename(new_filename)
+                filename = filename.replace(bracket[0], ib, 1)
+                filename = filename.replace(bracket[1], ob, 1)
+                return self.clean_filename_brackets(filename)
 
+        return filename
+
+    def clean_filename_separators(self, filename):
+        separators_from, separators_to = self.get_separators()
+        separators_all = separators_from + separators_to
+        separators_regex = '|'.join(map(re.escape, separators_all))
+
+        subcomponents = []
+        components = os.path.normpath(filename).split(os.sep)
+        # Removing file extension
+        components[-1] = str(os.path.splitext(components[-1])[0])
+        # components = [compo.lower() for compo in components]
+
+        new_components = ["." + os.sep, ]
+        for compo in components:
+            subcomponents += re.split(separators_regex, compo)
+            new_components.append(separators_to.join(subcomponents))
+
+        new_components[-1] += str(os.path.splitext(filename)[-1])
+        return os.path.join(*new_components)
+
+    def clean_filename_autoremove(self, filename):
+        separators_from, separators_to = self.get_separators()
+        brackets = WordManager.get_all_brackets("string")
+        separators_all = separators_from + separators_to + brackets
+        removables = self.get_removables()
+        # print(removables)
+        # exit()
+
+        subcomponents = []
+        components = os.path.normpath(filename).split(os.sep)
+        # Removing file extension
+        components[-1] = str(os.path.splitext(components[-1])[0])
+        # components = [compo.lower() for compo in components]
+
+        new_components = ["." + os.sep, ]
+        for compo in components:
+            # print(compo)
+            separator_positions = {}
+            for separator in separators_all:
+                separator_positions[separator] = []
+            
+            for i in range(len(compo)):
+                if compo[i] in separators_all:
+                    separator_positions[compo[i]].append(i)
+            
+            # print(json.dumps(separator_positions, indent=4))
+            all_pos = []
+            for matches in separator_positions.values():
+                all_pos += matches
+            all_pos.append(len(compo))
+            # print(json.dumps(all_pos, indent=4))
+            
+            start = 0
+            for i in range(len(all_pos)):
+                # print(i)
+                # if i >= len(all_pos):
+                #     break
+                # print(all_pos[i])
+                # print(compo[start:all_pos[i]])
+                # if all_pos[i] < len(compo):
+                #     print(compo[all_pos[i]])
+                start = all_pos[i] + 1
+            
+            # print(json.dumps(separator_positions, indent=4))
+
+            # for separator in separator_positions.keys():
+            #     for character in compo:
+
+            # subcomponents += re.split(separators_regex, compo)
+            # exit()
+        #     new_components.append(separators_to.join(subcomponents))
+
+        # new_components[-1] += str(os.path.splitext(filename)[-1])
+        # return os.path.join(*new_components)
+        new_filename = filename
         return new_filename
+
+    def clean_filename(self, filename):
+        mainapp = self.winfo_toplevel()
+        options = mainapp.nametowidget("options")
+        operationoptions = options.get_operationoptions()
+        config = mainapp.get_config()
+
+        # print(get_operationoptions)
+        # print(json.dumps(get_operationoptions, indent=4))
+        # exit()
+        if operationoptions["unify_brackets"] == 1:
+            filename = self.clean_filename_brackets(filename)
+        if operationoptions["unify_separators"] == 1:
+            filename = self.clean_filename_separators(filename)
+        if operationoptions["autoremove"] == 1:
+            filename = self.clean_filename_autoremove(filename)
+        return filename
