@@ -26,6 +26,7 @@ class WordManager(tk.LabelFrame):
         self.action_frame = None
         self.word_container_frame = None
         self.word_checkboxes = {}
+        self.words = {}
 
         self.load_components()
     
@@ -38,22 +39,50 @@ class WordManager(tk.LabelFrame):
             word_data["checkbox"].deselect()
     
     def remove_words(self):
-        print("In save_words")
         for word, word_data in self.word_checkboxes.items():
-            print(f"{word}: {word_data['value'].get()}")
+            if word_data['value'].get() == 1:
+                self.words[word] = {
+                    "word": word,
+                    "remove" : 1
+                }
+        self.save_words()
     
     def ignore_words(self):
+        for word, word_data in self.word_checkboxes.items():
+            if word_data['value'].get() == 1:
+                self.words[word] = {
+                    "word": word,
+                    "remove" : 0
+                }
+        self.save_words()
+    
+    def save_words(self):
         mainapp = self.winfo_toplevel()
-        cursor = mainapp.get_dbcon().cursor()
+        sqlite = mainapp.get_dbcon()
+        cursor = sqlite.cursor()
         if not self.test_tables():
             self.create_tables()
-        print(self.test_tables())
-        print("In save_words")
-        for word, word_data in self.word_checkboxes.items():
-            print(f"{word}: {word_data['value'].get()}")
 
-    def reset_words(self):
-        print("In reset_words")
+        cursor.execute('DELETE FROM words;')
+        for word, word_data in self.words.items():
+            cursor = sqlite.cursor()
+            sql = ''' INSERT OR IGNORE INTO words(word,remove)
+                    VALUES(?,?) '''
+            cursor.execute(sql, list(word_data.values()))
+        sqlite.commit()
+
+    def reset_words(self, verbose = False):
+        mainapp = self.winfo_toplevel()
+        sqlite = mainapp.get_dbcon()
+        cursor = sqlite.cursor()
+        if not self.test_tables():
+            self.create_tables()
+
+        cursor.execute('DELETE FROM words;')
+        if verbose:
+            print(f"Deleted {cursor.rowcount()} from sqlite")
+        
+        sqlite.commit()
     
     def open_manager_window(self):
         print("In open_manager_window")
@@ -212,9 +241,8 @@ class WordManager(tk.LabelFrame):
         cursor = sqlite.cursor()
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS words (
-                id TEXT PRIMARY KEY,
-                word TEXT NOT NULL,
-                action TEXT NOT NULL
+                word TEXT NOT NULL PRIMARY KEY,
+                remove INTEGER NOT NULL DEFAULT 0
             )
         ''')
         sqlite.commit()
