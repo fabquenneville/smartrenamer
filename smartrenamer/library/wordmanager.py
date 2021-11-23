@@ -4,6 +4,7 @@ import math
 import json
 import re
 import os
+import sqlite3
 import tkinter as tk
 from functools import partial
 from itertools import chain
@@ -36,10 +37,23 @@ class WordManager(tk.LabelFrame):
         for word, word_data in self.word_checkboxes.items():
             word_data["checkbox"].deselect()
     
-    def save_words(self):
+    def remove_words(self):
         print("In save_words")
         for word, word_data in self.word_checkboxes.items():
             print(f"{word}: {word_data['value'].get()}")
+    
+    def ignore_words(self):
+        mainapp = self.winfo_toplevel()
+        cursor = mainapp.get_dbcon().cursor()
+        if not self.test_tables():
+            self.create_tables()
+        print(self.test_tables())
+        print("In save_words")
+        for word, word_data in self.word_checkboxes.items():
+            print(f"{word}: {word_data['value'].get()}")
+
+    def reset_words(self):
+        print("In reset_words")
     
     def open_manager_window(self):
         print("In open_manager_window")
@@ -60,9 +74,9 @@ class WordManager(tk.LabelFrame):
         buttons = [
             tk.Button(self.action_frame, text='Select all', command= self.select_all_words),
             tk.Button(self.action_frame, text='Deselect all', command= self.deselect_all_words),
-            tk.Button(self.action_frame, text='Remove', command= self.save_words),
-            tk.Button(self.action_frame, text='Ignore', command= self.save_words),
-            tk.Button(self.action_frame, text='Reset', command= self.save_words),
+            tk.Button(self.action_frame, text='Remove', command= self.remove_words),
+            tk.Button(self.action_frame, text='Ignore', command= self.ignore_words),
+            tk.Button(self.action_frame, text='Reset saved words', command= self.reset_words),
             tk.Button(self.action_frame, text='Manage', command= self.open_manager_window)
         ]
 
@@ -82,8 +96,10 @@ class WordManager(tk.LabelFrame):
         separators_from = config["main"]["separators_from"]
         separators_to = config["main"]["separators_to"]
 
-        new_from = mainapp.nametowidget("optionselector.operationoptionsselector.unify_separators_from").get()
-        new_to = mainapp.nametowidget("optionselector.operationoptionsselector.unify_separators_to").get()
+        # print(mainapp.nametowidget("options.operationoptionsselector").winfo_children())
+        # exit()
+        new_from = mainapp.nametowidget("options.operationoptionsselector.unify_separators_from").get()
+        new_to = mainapp.nametowidget("options.operationoptionsselector.unify_separators_to").get()
 
         if (separators_from != new_from or separators_to != new_to) and new_from and new_to:
             mainapp.update_separators(new_from, new_to)
@@ -173,7 +189,8 @@ class WordManager(tk.LabelFrame):
                 variable = self.word_checkboxes[k]["value"],
                 onvalue = 1, offvalue = 0
             )
-            self.word_checkboxes[k]["checkbox"].grid(column=xpos, row=ypos, sticky="nwe")
+
+            self.word_checkboxes[k]["checkbox"].grid(column=xpos, row=ypos, sticky="nw")
             xpos += 1
             if xpos > 9:
                 xpos = 0
@@ -189,4 +206,35 @@ class WordManager(tk.LabelFrame):
     def ngram(seq: str, n: int) -> Iterator[str]:
         return (seq[i: i+n] for i in range(0, len(seq)-n+1))
 
-    
+    def create_tables(self):
+        mainapp = self.winfo_toplevel()
+        sqlite = mainapp.get_dbcon()
+        cursor = sqlite.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS words (
+                id TEXT PRIMARY KEY,
+                word TEXT NOT NULL,
+                action TEXT NOT NULL
+            )
+        ''')
+        sqlite.commit()
+
+    def drop_tables(self):
+        mainapp = self.winfo_toplevel()
+        sqlite = mainapp.get_dbcon()
+        cursor = sqlite.cursor()
+        cursor.execute('''
+            DROP TABLE IF EXISTS words
+        ''')
+        sqlite.commit()
+
+    def test_tables(self):
+        mainapp = self.winfo_toplevel()
+        sqlite = mainapp.get_dbcon()
+        cursor = sqlite.cursor()
+        cursor.execute('''
+            SELECT name FROM sqlite_master WHERE type='table' AND name='words';
+        ''')
+        if (cursor.fetchone()):
+            return True
+        return False

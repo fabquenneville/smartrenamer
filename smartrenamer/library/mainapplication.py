@@ -2,6 +2,7 @@
 
 import json
 import os
+import sqlite3
 from pathlib import Path
 import tkinter.filedialog
 import tkinter as tk
@@ -9,7 +10,7 @@ import tkinter as tk
 from .comparator import Comparator
 from .directoryselector import DirectorySelector
 from .mainmenu import MainMenu
-from .optionselector import OptionSelector
+from .options import Options
 from .tools import get_content
 
 class MainApplication(tk.Tk):
@@ -19,7 +20,7 @@ class MainApplication(tk.Tk):
         self.colors = None
         self.mainmenu = None
         self.directoryselector = None
-        self.optionselector = None
+        self.options = None
         self.comparator = None
         self.userconfig = {
             "main": {
@@ -44,11 +45,11 @@ class MainApplication(tk.Tk):
 
         self.mainmenu = MainMenu(self)
         self.directoryselector = DirectorySelector(self)
-        self.optionselector = OptionSelector(self)
+        self.options = Options(self)
         self.comparator = Comparator(self)
 
         self.directoryselector.pack(fill="x")
-        self.optionselector.pack(fill="x")
+        self.options.pack(fill="x")
         self.comparator.pack(expand=True, fill="both")
 
         self.config(menu=self.mainmenu)
@@ -69,22 +70,28 @@ class MainApplication(tk.Tk):
             os.mkdir(app_config_folder_path)
         
         return app_config_path
+
+    @staticmethod
+    def get_database_path(createfolders = False):
+        homepath = str(Path.home())
+        if not homepath[-1] == "/":
+            homepath += "/"
+        config_folder_path = homepath + ".config/"
+        app_config_folder_path = config_folder_path + "smartrenamer/"
+        app_database_path = app_config_folder_path + "smartrenamer.sqlite3"
+
+        if not os.path.isdir(config_folder_path) and createfolders:
+            os.mkdir(config_folder_path)
+        
+        if not os.path.isdir(app_config_folder_path) and createfolders:
+            os.mkdir(app_config_folder_path)
+        
+        return app_database_path
     
     def get_config(self):
         if not self.userconfig:
             self.load_config()
         return self.userconfig
-    
-    def update_separators(self, separators_from = None, separators_to = None):
-        changed = False
-        if separators_from and separators_from != self.userconfig["main"]["separators_from"]:
-            self.userconfig["main"]["separators_from"] = separators_from
-            changed = True
-        if separators_to and separators_to != self.userconfig["main"]["separators_to"]:
-            self.userconfig["main"]["separators_to"] = separators_to
-            changed = True
-        if changed:
-            self.save_config()
 
     def load_config(self):
         config_path = self.get_config_path()
@@ -102,9 +109,28 @@ class MainApplication(tk.Tk):
         config_path = self.get_config_path(True)
         with open(config_path, 'w') as configfile:
             json.dump(self.userconfig, configfile, indent=4)
+    
+    def get_dbcon(self):
+        if not self.database:
+            self.load_database()
+        return self.database
 
     def load_database(self):
-        pass
+        db_path = self.get_database_path(True)
+        self.database  = sqlite3.connect(db_path, detect_types = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
+        self.database.row_factory = sqlite3.Row
+        # self.create_tables()
+    
+    def update_separators(self, separators_from = None, separators_to = None):
+        changed = False
+        if separators_from and separators_from != self.userconfig["main"]["separators_from"]:
+            self.userconfig["main"]["separators_from"] = separators_from
+            changed = True
+        if separators_to and separators_to != self.userconfig["main"]["separators_to"]:
+            self.userconfig["main"]["separators_to"] = separators_to
+            changed = True
+        if changed:
+            self.save_config()
 
     def load_new_directory(self):
         self.open_new_directory()
@@ -131,13 +157,13 @@ class MainApplication(tk.Tk):
         if not selected_folder:
             return False
 
-
         content = get_content(selected_folder, absolute=False)
 
-        operationselector = self.nametowidget("optionselector.operationselector")
-        action = operationselector.get_action()
+        options = self.nametowidget("options")
+        action = options.get_action()
+
         if action == "clean":
-            wordmanager = self.nametowidget("optionselector.wordmanager")
+            wordmanager = self.nametowidget("options.wordmanager")
             wordmanager.load_words(content)
         
         before_list = self.nametowidget("comparator_frame.before_frame.before_list")
