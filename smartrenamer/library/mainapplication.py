@@ -184,7 +184,7 @@ class MainApplication(tk.Tk):
         for file in content:
             before_list.insert(tk.END, str(file))
             if action == "clean":
-                after_list.insert(tk.END, wordmanager.clean_filename(str(file)))
+                after_list.insert(tk.END, wordmanager.clean_filepath(str(file)))
             else:
                 after_list.insert(tk.END, str(file))
 

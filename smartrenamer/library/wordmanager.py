@@ -379,7 +379,7 @@ class WordManager(tk.LabelFrame):
             return True
         return False
 
-    def clean_filename_brackets(self, filename):
+    def clean_filepath_brackets(self, filepath):
         separators_from, separators_to = self.get_separators()
         separators_all = separators_from + separators_to
 
@@ -387,52 +387,76 @@ class WordManager(tk.LabelFrame):
         brackets = WordManager.get_all_brackets()
 
         for bracket in brackets:
-            if bracket[0] in filename and bracket[1] in filename and bracket[0] != inner_bracket and bracket[1] != outter_bracket:
+            if bracket[0] in filepath and bracket[1] in filepath and bracket[0] != inner_bracket and bracket[1] != outter_bracket:
                 ib = inner_bracket
                 ob = outter_bracket
 
-                ib_pos = filename.find(bracket[0])
-                if ib_pos != 2 and filename[ib_pos - 1] != os.sep:
-                    if filename[ib_pos - 1] not in separators_all:
+                ib_pos = filepath.find(bracket[0])
+                if ib_pos != 2 and filepath[ib_pos - 1] != os.sep:
+                    if filepath[ib_pos - 1] not in separators_all:
                         ib = separators_to + inner_bracket
                 
-                ob_pos = filename.find(bracket[1])
-                if ob_pos != len(filename) - 1 and filename[ib_pos + 1] != os.sep:
-                    if filename[ob_pos + 1] not in separators_all:
+                ob_pos = filepath.find(bracket[1])
+                if ob_pos != len(filepath) - 1 and filepath[ib_pos + 1] != os.sep:
+                    if filepath[ob_pos + 1] not in separators_all:
                         ob = outter_bracket + separators_to
 
-                filename = filename.replace(bracket[0], ib, 1)
-                filename = filename.replace(bracket[1], ob, 1)
-                return self.clean_filename_brackets(filename)
+                filepath = filepath.replace(bracket[0], ib, 1)
+                filepath = filepath.replace(bracket[1], ob, 1)
+                return self.clean_filepath_brackets(filepath)
 
-        return filename
+        return filepath
 
-    def clean_filename_separators(self, filename):
+    def clean_filepath_separators(self, filepath):
         separators_from, separators_to = self.get_separators()
         separators_all = separators_from + separators_to
         separators_regex = '|'.join(map(re.escape, separators_all))
 
-        components = os.path.normpath(filename).split(os.sep)
+        components = os.path.normpath(filepath).split(os.sep)
         # Removing file extension
         components[-1] = str(os.path.splitext(components[-1])[0])
         
-        new_components = ["." + os.sep, ]
+        new_components = []
         for compo in components:
             subcomponents = []
             subcomponents += re.split(separators_regex, compo)
             new_compo = separators_to.join(subcomponents)
             new_components.append(new_compo)
+        
+        tmp_filepath = os.path.join(*new_components)
 
-        new_components[-1] += str(os.path.splitext(filename)[-1])
-        return os.path.join(*new_components)
+        # Removing double, heading and trailing separators
+        new_filepath = ""
+        last_positive = False
+        for i in range(len(tmp_filepath)):
+            if tmp_filepath[i] == separators_to:
+                if last_positive:
+                    continue
+                last_positive = True
+                if i == 0:
+                    continue
+            else:
+                last_positive = False
+            new_filepath += tmp_filepath[i]
+        new_filepath = WordManager.remove_trail_char(separators_to, new_filepath)
+        
+        # Adding back extension
+        new_filepath = "." + os.sep + new_filepath + str(os.path.splitext(filepath)[-1])
+        return new_filepath
+    
+    @staticmethod
+    def remove_trail_char(character, string):
+        if string[-1] == character:
+            return WordManager.remove_trail_char(character, string[:-1])
+        return string
 
-    def clean_filename_autoremove(self, filename):
+    def clean_filepath_autoremove(self, filepath):
         separators_from, separators_to = self.get_separators()
         brackets = WordManager.get_all_brackets("string")
         separators_all = separators_from + separators_to + brackets
         removables = self.get_removables()
         
-        components = os.path.normpath(filename).split(os.sep)
+        components = os.path.normpath(filepath).split(os.sep)
         # Removing file extension
         components[-1] = str(os.path.splitext(components[-1])[0])
 
@@ -488,10 +512,10 @@ class WordManager(tk.LabelFrame):
             
             new_components.append(new_compo)
 
-        new_components[-1] += str(os.path.splitext(filename)[-1])
+        new_components[-1] += str(os.path.splitext(filepath)[-1])
         return os.path.join(*new_components)
 
-    def clean_filename(self, filename):
+    def clean_filepath(self, filepath):
         mainapp = self.winfo_toplevel()
         options = mainapp.nametowidget("options")
         operationoptions = options.get_operationoptions()
@@ -500,14 +524,14 @@ class WordManager(tk.LabelFrame):
         # print(get_operationoptions)
         # print(json.dumps(get_operationoptions, indent=4))
         # exit()
-        # print(f"Original: {filename}")
+        # print(f"Original: {filepath}")
         if operationoptions["unify_brackets"] == 1:
-            filename = self.clean_filename_brackets(filename)
-        # print(f"after clean_filename_brackets: {filename}")
+            filepath = self.clean_filepath_brackets(filepath)
+        # print(f"after clean_filepath_brackets: {filepath}")
         if operationoptions["unify_separators"] == 1:
-            filename = self.clean_filename_separators(filename)
-        # print(f"after clean_filename_separators: {filename}")
+            filepath = self.clean_filepath_separators(filepath)
+        # print(f"after clean_filepath_separators: {filepath}")
         if operationoptions["autoremove"] == 1:
-            filename = self.clean_filename_autoremove(filename)
-        # print(f"after clean_filename_autoremove: {filename}")
-        return filename
+            filepath = self.clean_filepath_autoremove(filepath)
+        # print(f"after clean_filepath_autoremove: {filepath}")
+        return filepath
