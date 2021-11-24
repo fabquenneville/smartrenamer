@@ -160,15 +160,22 @@ class MainApplication(tk.Tk):
 
         return get_content(selected_folder, absolute=False)
 
+    def clear_filelists(self):
+        before_list = self.nametowidget("comparator_frame.before_frame.before_list")
+        after_list = self.nametowidget("comparator_frame.after_frame.after_list")
+        before_list.delete(0,'end')
+        after_list.delete(0,'end')
+        before_list.update()
+        after_list.update()
+
     def load_directory(self):
+        self.clear_filelists()
         content = self.get_files_list()
+        content = sorted(content)
         options = self.nametowidget("options")
         action = options.get_action()
         before_list = self.nametowidget("comparator_frame.before_frame.before_list")
         after_list = self.nametowidget("comparator_frame.after_frame.after_list")
-
-        before_list.delete(0,'end')
-        after_list.delete(0,'end')
 
         if action == "clean":
             wordmanager = self.nametowidget("options.wordmanager")
