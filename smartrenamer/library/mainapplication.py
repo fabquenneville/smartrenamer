@@ -182,11 +182,14 @@ class MainApplication(tk.Tk):
             wordmanager.load_words()
 
         for file in content:
-            before_list.insert(tk.END, str(file))
+            filepath_before = str(file)
+            filepath_after = filepath_before
             if action == "clean":
-                after_list.insert(tk.END, wordmanager.clean_filepath(str(file)))
-            else:
-                after_list.insert(tk.END, str(file))
+                filepath_after = wordmanager.clean_filepath(str(file))
+
+            if filepath_before != filepath_after:
+                before_list.insert(tk.END, filepath_before)
+                after_list.insert(tk.END, filepath_after)
 
     @staticmethod
     def get_separators_default():

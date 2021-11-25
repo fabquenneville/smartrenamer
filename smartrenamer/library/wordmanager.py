@@ -234,10 +234,7 @@ class WordManager(tk.LabelFrame):
 
     def get_removables(self):
         removables = []
-        # print(json.dumps(self.words, indent=4))
-        # print(json.dumps(self.words.values(), indent=4))
         for word, word_data in self.words.items():
-            # print(word_data)
             if word_data["remove"] == 1:
                 removables.append(word)
         return removables
@@ -259,7 +256,6 @@ class WordManager(tk.LabelFrame):
             for child in self.word_container_frame.winfo_children():
                 child.destroy()
         self.word_checkboxes = {}
-        # removables = self.get_removables()
         
         separators_from, separators_to = self.get_separators()
         separators_all = separators_from + separators_to + "()[]{}<>"
@@ -425,7 +421,7 @@ class WordManager(tk.LabelFrame):
         
         tmp_filepath = os.path.join(*new_components)
 
-        # Removing double, heading and trailing separators
+        # Removing double separators
         new_filepath = ""
         last_positive = False
         for i in range(len(tmp_filepath)):
@@ -433,16 +429,27 @@ class WordManager(tk.LabelFrame):
                 if last_positive:
                     continue
                 last_positive = True
-                if i == 0:
-                    continue
             else:
                 last_positive = False
             new_filepath += tmp_filepath[i]
-        new_filepath = WordManager.remove_trail_char(separators_to, new_filepath)
         
+        # Removing heading and trailing separators in path components
+        components = os.path.normpath(new_filepath).split(os.sep)
+        new_components = []
+        for compo in components:
+            new_component = WordManager.remove_head_char(separators_to, compo)
+            new_components.append(WordManager.remove_trail_char(separators_to, new_component))
+        new_filepath = os.path.join(*new_components)
+
         # Adding back extension
         new_filepath = "." + os.sep + new_filepath + str(os.path.splitext(filepath)[-1])
         return new_filepath
+    
+    @staticmethod
+    def remove_head_char(character, string):
+        if string[0] == character:
+            return WordManager.remove_head_char(character, string[1:])
+        return string
     
     @staticmethod
     def remove_trail_char(character, string):
@@ -495,12 +502,12 @@ class WordManager(tk.LabelFrame):
 
                 if end < len(compo):
                     separator_after = compo[end]
-                
+
                 if start == end and separator_before:
                     new_compo += separator_before
 
                 elif word.lower() not in removables:
-                    if separator_before:
+                    if separator_before and (len(new_compo) != 0 and start != 0):
                         new_compo += separator_before
                     new_compo += word
 
@@ -528,10 +535,10 @@ class WordManager(tk.LabelFrame):
         if operationoptions["unify_brackets"] == 1:
             filepath = self.clean_filepath_brackets(filepath)
         # print(f"after clean_filepath_brackets: {filepath}")
-        if operationoptions["unify_separators"] == 1:
-            filepath = self.clean_filepath_separators(filepath)
-        # print(f"after clean_filepath_separators: {filepath}")
         if operationoptions["autoremove"] == 1:
             filepath = self.clean_filepath_autoremove(filepath)
         # print(f"after clean_filepath_autoremove: {filepath}")
+        if operationoptions["unify_separators"] == 1:
+            filepath = self.clean_filepath_separators(filepath)
+        # print(f"after clean_filepath_separators: {filepath}")
         return filepath
