@@ -18,7 +18,20 @@ class Options(tk.LabelFrame):
         self.action = tk.StringVar()
         self.operationselector = None
         self.operationoptionsselector = None
-        self.operationoptions = None
+        self.variables = {
+            "remove_words":                   tk.IntVar(),
+            "unify_capitalisation":         tk.IntVar(),
+            "unify_capitalisation_type":    tk.StringVar(),
+            "unify_dates":                  tk.IntVar(),
+            "unify_dates_format":           tk.StringVar(),
+            "unify_dates_separators":       tk.IntVar(),
+            "unify_dates_separators_type":  tk.StringVar(),
+            "unify_separators":             tk.IntVar(),
+            "unify_separators_from":        tk.StringVar(),
+            "unify_separators_to":          tk.StringVar(),
+            "unify_brackets":               tk.IntVar(),
+            "unify_brackets_type":          tk.StringVar(),
+        }
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -82,16 +95,6 @@ class Options(tk.LabelFrame):
             child.destroy()
         
         if self.action.get() == "clean":
-            self.operationoptions = {
-                "autoremove":                   tk.IntVar(),
-                "unify_capitalisation":         tk.IntVar(),
-                "unify_capitalisation_type":    tk.StringVar(),
-                "unify_separators":             tk.IntVar(),
-                "unify_separators_from":        tk.StringVar(),
-                "unify_separators_to":          tk.StringVar(),
-                "unify_brackets":               tk.IntVar(),
-                "unify_brackets_type":          tk.StringVar(),
-            }
 
             components = [
                 tk.Frame(
@@ -114,6 +117,16 @@ class Options(tk.LabelFrame):
                     name = "unify_brackets_frame",
                     # borderwidth = 1, relief = tk.SOLID
                 ),
+                tk.Frame(
+                    self.operationoptionsselector,
+                    name = "unify_dates_frame",
+                    # borderwidth = 1, relief = tk.SOLID
+                ),
+                tk.Frame(
+                    self.operationoptionsselector,
+                    name = "unify_dates_separators_frame",
+                    # borderwidth = 1, relief = tk.SOLID
+                ),
             ]
 
             nbcol = 2
@@ -133,22 +146,20 @@ class Options(tk.LabelFrame):
                     xpos = 0
                     ypos += 1
 
-                if component._name in ["autoremove"]:
-                    component.select()
-
                 if component._name == "misc_options":
                     subcomponents = [
                         tk.Checkbutton(
                             component,
-                            text = "Auto remove",
-                            name = "autoremove",
-                            variable = self.operationoptions["autoremove"],
+                            text = "Remove words",
+                            name = "remove_words",
+                            variable = self.variables["remove_words"],
                             onvalue = 1, offvalue = 0
                         ),
                     ]
                     for subcomponent in subcomponents:
-                        if subcomponent._name in ["autoremove"]:
+                        if subcomponent._name in ["remove_words"]:
                             subcomponent.select()
+
                         subcomponent.pack(side="left")
 
                 if component._name == "unify_separators_frame":
@@ -157,7 +168,7 @@ class Options(tk.LabelFrame):
                             component,
                             text = "Unify Separators",
                             name = "unify_separators",
-                            variable = self.operationoptions["unify_separators"],
+                            variable = self.variables["unify_separators"],
                             onvalue = 1, offvalue=0
                         ),
                         tk.Label(
@@ -167,7 +178,7 @@ class Options(tk.LabelFrame):
                         tk.Entry(
                             component,
                             name = "unify_separators_from",
-                            textvariable = self.operationoptions["unify_separators_from"],
+                            textvariable = self.variables["unify_separators_from"],
                             width = 10
                         ),
                         tk.Label(
@@ -177,7 +188,7 @@ class Options(tk.LabelFrame):
                         tk.Entry(
                             component,
                             name = "unify_separators_to",
-                            textvariable = self.operationoptions["unify_separators_to"],
+                            textvariable = self.variables["unify_separators_to"],
                             width = 10
                         ),
                     ]
@@ -198,28 +209,28 @@ class Options(tk.LabelFrame):
                             component,
                             text = "Unify capitalisation",
                             name = "unify_capitalisation",
-                            variable = self.operationoptions["unify_capitalisation"],
+                            variable = self.variables["unify_capitalisation"],
                             onvalue = 1, offvalue=0
                         ),
                         tk.Radiobutton(
                             component,
                             text="Capitalize",
                             name = "capitalize",
-                            variable = self.operationoptions["unify_capitalisation_type"],
+                            variable = self.variables["unify_capitalisation_type"],
                             value="capitalize"
                         ),
                         tk.Radiobutton(
                             component,
                             text="UPPER",
                             name = "upper",
-                            variable = self.operationoptions["unify_capitalisation_type"],
+                            variable = self.variables["unify_capitalisation_type"],
                             value="upper"
                         ),
                         tk.Radiobutton(
                             component,
                             text="lower",
                             name = "lower",
-                            variable = self.operationoptions["unify_capitalisation_type"],
+                            variable = self.variables["unify_capitalisation_type"],
                             value="lower"
                         ),
                     ]
@@ -235,65 +246,156 @@ class Options(tk.LabelFrame):
                             component,
                             text = "Unify Brackets",
                             name = "unify_brackets",
-                            variable = self.operationoptions["unify_brackets"],
+                            variable = self.variables["unify_brackets"],
                             onvalue = 1, offvalue=0
                         ),
                         tk.Radiobutton(
                             component,
                             text="()",
-                            name = "parentheses",
-                            variable = self.operationoptions["unify_brackets_type"],
-                            value="parentheses"
+                            name = "parenthese",
+                            variable = self.variables["unify_brackets_type"],
+                            value="parenthese"
                         ),
                         tk.Radiobutton(
                             component,
                             text="[]",
-                            variable = self.operationoptions["unify_brackets_type"],
-                            value="squares"
+                            variable = self.variables["unify_brackets_type"],
+                            value="square"
                         ),
                         tk.Radiobutton(
                             component,
                             text="{}",
-                            variable = self.operationoptions["unify_brackets_type"],
+                            variable = self.variables["unify_brackets_type"],
                             value="curly"
                         ),
                         tk.Radiobutton(
                             component,
                             text="<>",
-                            variable = self.operationoptions["unify_brackets_type"],
-                            value="angles"
+                            variable = self.variables["unify_brackets_type"],
+                            value="angle"
                         ),
                         tk.Radiobutton(
                             component,
                             text="None",
-                            variable = self.operationoptions["unify_brackets_type"],
+                            variable = self.variables["unify_brackets_type"],
                             value="none"
                         )
                     ]
                     for subcomponent in subcomponents:
-                        if subcomponent._name in ["unify_brackets", "parentheses"]:
+                        if subcomponent._name in ["unify_brackets", "parenthese"]:
                             subcomponent.select()
                         subcomponent.pack(side="left")
-                    
-                    # component.pack(side="left")
 
 
-        
+                if component._name == "unify_dates_frame":
+                    subcomponents = [
+                        tk.Checkbutton(
+                            component,
+                            text = "Unify Dates",
+                            name = "unify_dates",
+                            variable = self.variables["unify_dates"],
+                            onvalue = 1, offvalue=0
+                        ),
+                        tk.Radiobutton(
+                            component,
+                            text = "YYYY-MM-DD",
+                            name = "yymd",
+                            variable = self.variables["unify_dates_format"],
+                            value="yymd"
+                        ),
+                        tk.Radiobutton(
+                            component,
+                            text = "YY-MM-DD",
+                            name = "ymd",
+                            variable = self.variables["unify_dates_format"],
+                            value="ymd",
+                        ),
+                        tk.Radiobutton(
+                            component,
+                            text = "DD-MM-YYYY",
+                            name ="dmyy",
+                            variable = self.variables["unify_dates_format"],
+                            value="dmyy"
+                        ),
+                        tk.Radiobutton(
+                            component,
+                            text = "DD-MM-YY",
+                            name = "dmy",
+                            variable = self.variables["unify_dates_format"],
+                            value="dmy",
+                        ),
+                    ]
+                    for subcomponent in subcomponents:
+                        if subcomponent._name in ["unify_dates", "yymd"]:
+                            subcomponent.select()
+                        subcomponent.pack(side="left")
 
-    def get_bracketname(self):
-        return self.operationoptions["unify_brackets_type"].get()
 
-    def get_operationoptions(self):
+                if component._name == "unify_dates_separators_frame":
+                    subcomponents = [
+                        tk.Checkbutton(
+                            component,
+                            text = "Unify dates separators",
+                            name = "unify_dates_separators",
+                            variable = self.variables["unify_dates_separators"],
+                            onvalue = 1, offvalue=0
+                        ),
+                        tk.Radiobutton(
+                            component,
+                            text="space",
+                            name = "space",
+                            variable = self.variables["unify_dates_separators_type"],
+                            value="space"
+                        ),
+                        tk.Radiobutton(
+                            component,
+                            text="-",
+                            name="dashe",
+                            variable = self.variables["unify_dates_separators_type"],
+                            value="dash"
+                        ),
+                        tk.Radiobutton(
+                            component,
+                            text="_",
+                            variable = self.variables["unify_dates_separators_type"],
+                            value="underscore"
+                        ),
+                        tk.Radiobutton(
+                            component,
+                            text=".",
+                            variable = self.variables["unify_dates_separators_type"],
+                            value="period"
+                        ),
+                        tk.Radiobutton(
+                            component,
+                            text="None",
+                            variable = self.variables["unify_dates_separators_type"],
+                            value="none"
+                        )
+                    ]
+                    for subcomponent in subcomponents:
+                        if subcomponent._name in ["unify_dates_separators", "dashe"]:
+                            subcomponent.select()
+                        subcomponent.pack(side="left")
+
+    def get_variables(self):
         return {
-            "autoremove":                   self.operationoptions["autoremove"].get(),
-            "unify_capitalisation":         self.operationoptions["unify_capitalisation"].get(),
-            "unify_capitalisation_type":    self.operationoptions["unify_capitalisation_type"].get(),
-            "unify_separators":             self.operationoptions["unify_separators"].get(),
-            "unify_separators_from":        self.operationoptions["unify_separators_from"].get(),
-            "unify_separators_to":          self.operationoptions["unify_separators_to"].get(),
-            "unify_brackets":               self.operationoptions["unify_brackets"].get(),
-            "unify_brackets_type":          self.operationoptions["unify_brackets_type"].get(),
+            "remove_words":                 self.variables["remove_words"].get(),
+            "unify_capitalisation":         self.variables["unify_capitalisation"].get(),
+            "unify_capitalisation_type":    self.variables["unify_capitalisation_type"].get(),
+            "unify_dates":                  self.variables["unify_dates"].get(),
+            "unify_dates_format":           self.variables["unify_dates_format"].get(),
+            "unify_dates_separators":       self.variables["unify_dates_separators"].get(),
+            "unify_dates_separators_type":  self.variables["unify_dates_separators_type"].get(),
+            "unify_separators":             self.variables["unify_separators"].get(),
+            "unify_separators_from":        self.variables["unify_separators_from"].get(),
+            "unify_separators_to":          self.variables["unify_separators_to"].get(),
+            "unify_brackets":               self.variables["unify_brackets"].get(),
+            "unify_brackets_type":          self.variables["unify_brackets_type"].get(),
         }
 
     def get_action(self):
         return self.action.get()
+             
+    def get_bracketname(self):
+        return self.variables["unify_brackets_type"].get()

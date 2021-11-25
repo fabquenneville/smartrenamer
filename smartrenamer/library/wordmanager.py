@@ -2,6 +2,7 @@
 
 import math
 import json
+import time
 import re
 import os
 import sqlite3
@@ -182,6 +183,23 @@ class WordManager(tk.LabelFrame):
         self.word_container_frame.pack(side="top", fill="both", expand=True)
         # self.individual_word_frame.pack(side="top", fill="both", expand=True)
     
+    @staticmethod
+    def get_all_separators(format = "list"):
+        separators = {
+            "period": ".",
+            "space": " ",
+            "dash": "-",
+            "underscore": ".",
+        }
+        if format == "string":
+            return "".join(separators.values())
+        if format == "dict":
+            return separators
+        for separator_type in separators.keys():
+            if format == separator_type:
+                return separators[format]
+        return [separator for separator in separators.values()]
+    
     def get_separators(self):
         mainapp = self.winfo_toplevel()
         config = mainapp.get_config()
@@ -198,15 +216,22 @@ class WordManager(tk.LabelFrame):
     
     @staticmethod
     def get_all_brackets(format = "tupples"):
+        brackets = {
+            "parenthese":   ("(", ")"),
+            "square":       ("[", "]"),
+            "curly":        ("{", "}"),
+            "angle":        ("<", ">"),
+        }
         if format == "string":
-            return "()[]{}<>"
-        elif format == "dict":
-            return {
-                "parentheses":  ("(", ")"),
-                "squares":      ("[", "]"),
-                "curly":        ("{", "}"),
-                "angles":       ("<", ">"),
-            }
+            res = ""
+            for k, v in brackets.items():
+                res += k[0] + k[1]
+            return res
+        if format == "dict":
+            return brackets
+        for bracket_type in brackets.keys():
+            if format == bracket_type:
+                return brackets[format][0], brackets[format][1]
         return [
             ("(", ")"),
             ("[", "]"),
@@ -259,7 +284,7 @@ class WordManager(tk.LabelFrame):
         
         separators_from, separators_to = self.get_separators()
         separators_all = separators_from + separators_to + "()[]{}<>"
-        separators_from_regex = '|'.join(map(re.escape, separators_all))
+        separators_regex = '|'.join(map(re.escape, separators_all))
 
         file_components = []
         files = mainapp.get_files_list()
@@ -269,7 +294,7 @@ class WordManager(tk.LabelFrame):
             components[-1] = str(os.path.splitext(components[-1])[0])
             components = [compo.lower() for compo in components]
             for compo in components:
-                subcomponents += re.split(separators_from_regex, compo)
+                subcomponents += re.split(separators_regex, compo)
             file_components += subcomponents
         
         component_counts = dict(Counter(file_components))
@@ -444,6 +469,87 @@ class WordManager(tk.LabelFrame):
         # Adding back extension
         new_filepath = "." + os.sep + new_filepath + str(os.path.splitext(filepath)[-1])
         return new_filepath
+
+    def clean_filepath_dates(self, filepath):
+        mainapp = self.winfo_toplevel()
+        options = mainapp.nametowidget("options")
+        option_variables = options.get_variables()
+        separators_from, separators_to = self.get_separators()
+        separators_all = separators_from + separators_to
+        current_y = int(time.strftime("%y", time.localtime()))
+        new_format = option_variables["unify_dates_format"]
+        change_separators = option_variables["unify_dates_separators"]
+        separator_type = option_variables["unify_dates_separators_type"]
+        separator = WordManager.get_all_separators(separator_type)
+
+        sep_regex = '|'.join(map(re.escape, separators_all))
+        regexes = [
+            f"(?:(?<=^)|(?<=[^\d]))(\d{{2}})([{sep_regex}]{{1}})(\d{{2}})([{sep_regex}]{{1}})(\d{{2}})(?:(?=$)|(?=[^\d]))", # 00-00-00
+            f"(?:(?<=^)|(?<=[^\d]))(\d{{4}})([{sep_regex}]{{1}})(\d{{2}})([{sep_regex}]{{1}})(\d{{2}})(?:(?=$)|(?=[^\d]))", # ^0000-00-00
+            f"(?:(?<=^)|(?<=[^\d]))(\d{{2}})([{sep_regex}]{{1}})(\d{{2}})([{sep_regex}]{{1}})(\d{{4}})(?:(?=$)|(?=[^\d]))", # ^00-00-0000
+        ]
+        date_regex = '|'.join(regexes)
+
+        dates = re.findall(date_regex, filepath)
+        for raw_date in dates:
+            old_date = ''.join(raw_date)
+            year = False
+            first_separator = False
+            month = False
+            second_separator = False
+            day = False
+            
+            in_date = False
+            for item in raw_date:
+                if item.isnumeric() and not year:
+                    year = item
+                    in_date = True
+                    continue
+                if in_date:
+                    if item.isnumeric() and not month:
+                        month = item
+                        continue
+                    if item.isnumeric() and not day:
+                        day = item
+                        continue
+                    if not item.isnumeric() and not first_separator and year and not month:
+                        first_separator = item
+                        continue
+                    if not item.isnumeric() and not second_separator and month and not day:
+                        second_separator = item
+                        continue
+
+
+            if len(raw_date[4]) == 4:
+                year, day = day, year
+
+            if change_separators == 1:
+                first_separator = separator
+                second_separator = separator
+
+            new_date = ""
+            if new_format == "ymd":
+                new_date = f"{year[-2:]}{first_separator}{month}{second_separator}{day}"
+            elif new_format == "yymd":
+                if len(year) < 4:
+                    if current_y < int(year[-2:]):
+                        year = "19" + year[-2:]
+                    else:
+                        year = "20" + year[-2:]
+                new_date = f"{year}{first_separator}{month}{second_separator}{day}"
+            if new_format == "dmy":
+                new_date = f"{day}{first_separator}{month}{second_separator}{year[-2:]}"
+            elif new_format == "dmyy":
+                if len(year) < 4:
+                    if current_y < int(year[-2:]):
+                        year = "19" + year[-2:]
+                    else:
+                        year = "20" + year[-2:]
+                new_date = f"{day}{first_separator}{month}{second_separator}{year}"
+            
+            filepath = filepath.replace(old_date, new_date)
+
+        return filepath
     
     @staticmethod
     def remove_head_char(character, string):
@@ -457,7 +563,7 @@ class WordManager(tk.LabelFrame):
             return WordManager.remove_trail_char(character, string[:-1])
         return string
 
-    def clean_filepath_autoremove(self, filepath):
+    def clean_filepath_remove_words(self, filepath):
         separators_from, separators_to = self.get_separators()
         brackets = WordManager.get_all_brackets("string")
         separators_all = separators_from + separators_to + brackets
@@ -525,20 +631,22 @@ class WordManager(tk.LabelFrame):
     def clean_filepath(self, filepath):
         mainapp = self.winfo_toplevel()
         options = mainapp.nametowidget("options")
-        operationoptions = options.get_operationoptions()
-        config = mainapp.get_config()
+        option_variables = options.get_variables()
 
-        # print(get_operationoptions)
-        # print(json.dumps(get_operationoptions, indent=4))
+        # print(get_variables)
+        # print(json.dumps(get_variables, indent=4))
         # exit()
         # print(f"Original: {filepath}")
-        if operationoptions["unify_brackets"] == 1:
+        if option_variables["unify_brackets"] == 1:
             filepath = self.clean_filepath_brackets(filepath)
         # print(f"after clean_filepath_brackets: {filepath}")
-        if operationoptions["autoremove"] == 1:
-            filepath = self.clean_filepath_autoremove(filepath)
-        # print(f"after clean_filepath_autoremove: {filepath}")
-        if operationoptions["unify_separators"] == 1:
+        if option_variables["remove_words"] == 1:
+            filepath = self.clean_filepath_remove_words(filepath)
+        # print(f"after clean_filepath_remove_words: {filepath}")
+        if option_variables["unify_separators"] == 1:
             filepath = self.clean_filepath_separators(filepath)
         # print(f"after clean_filepath_separators: {filepath}")
+        if option_variables["unify_dates"] == 1:
+            filepath = self.clean_filepath_dates(filepath)
+        # print(f"after clean_filepath_dates: {filepath}")
         return filepath

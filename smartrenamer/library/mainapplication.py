@@ -26,7 +26,7 @@ class MainApplication(tk.Tk):
         self.userconfig = {
             "main": {
                 "selected_folder": None,
-                "separators_from": MainApplication.get_separators_default(),
+                "separators_from": WordManager.get_all_brackets(format="string"),
                 "separators_to": " ",
             }
         }
@@ -190,10 +190,6 @@ class MainApplication(tk.Tk):
             if filepath_before != filepath_after:
                 before_list.insert(tk.END, filepath_before)
                 after_list.insert(tk.END, filepath_after)
-
-    @staticmethod
-    def get_separators_default():
-        return ". -_,"
 
     def get_separators_all(self):
         separators = ""
