@@ -225,7 +225,7 @@ class WordManager(tk.LabelFrame):
         if format == "string":
             res = ""
             for k, v in brackets.items():
-                res += k[0] + k[1]
+                res += v[0] + v[1]
             return res
         if format == "dict":
             return brackets
@@ -633,9 +633,6 @@ class WordManager(tk.LabelFrame):
         options = mainapp.nametowidget("options")
         option_variables = options.get_variables()
 
-        # print(get_variables)
-        # print(json.dumps(get_variables, indent=4))
-        # exit()
         # print(f"Original: {filepath}")
         if option_variables["unify_brackets"] == 1:
             filepath = self.clean_filepath_brackets(filepath)
