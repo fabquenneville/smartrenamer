@@ -187,9 +187,9 @@ class WordManager(tk.LabelFrame):
     def get_all_separators(format = "list"):
         separators = {
             "period": ".",
-            "space": " ",
             "dash": "-",
-            "underscore": ".",
+            "underscore": "_",
+            "space": " ",
         }
         if format == "string":
             return "".join(separators.values())
@@ -215,29 +215,60 @@ class WordManager(tk.LabelFrame):
         return separators_from, separators_to
     
     @staticmethod
+    def get_separators_radios(parent, variable):
+        components = []
+        separators = WordManager.get_all_separators("dict")
+        for name, separator in separators.items():
+            text = separator
+            if name in ["space", "none"]:
+                text = name.capitalize()
+            components.append(tk.Radiobutton(
+                parent,
+                text = text,
+                name = name,
+                variable = variable,
+                value = name
+            ))
+        return components
+    
+    @staticmethod
+    def get_brackets_radios(parent, variable):
+        components = []
+        brackets = WordManager.get_all_brackets("dict")
+        for name, value in brackets.items():
+            text = name.capitalize()
+            if name not in ["space", "none"]:
+                text = "".join(value)
+            components.append(tk.Radiobutton(
+                parent,
+                text = text,
+                name = name,
+                variable = variable,
+                value = name
+            ))
+        return components
+    
+    @staticmethod
     def get_all_brackets(format = "tupples"):
         brackets = {
             "parenthese":   ("(", ")"),
             "square":       ("[", "]"),
             "curly":        ("{", "}"),
             "angle":        ("<", ">"),
+            "none":         None,
         }
         if format == "string":
             res = ""
             for k, v in brackets.items():
-                res += v[0] + v[1]
+                if v:
+                    res += v[0] + v[1]
             return res
         if format == "dict":
             return brackets
         for bracket_type in brackets.keys():
             if format == bracket_type:
                 return brackets[format][0], brackets[format][1]
-        return [
-            ("(", ")"),
-            ("[", "]"),
-            ("{", "}"),
-            ("<", ">"),
-        ]
+        return list(bracket for bracket in brackets.values() if bracket)
 
     def get_brackets(self):
         mainapp = self.winfo_toplevel()
