@@ -4,11 +4,9 @@ import json
 import os
 import sqlite3
 from pathlib import Path
-import tkinter.filedialog
 import tkinter as tk
 
 from .comparator import Comparator
-from .directoryselector import DirectorySelector
 from .mainmenu import MainMenu
 from .options import Options
 from .wordmanager import WordManager
@@ -20,7 +18,6 @@ class MainApplication(tk.Tk):
 
         self.colors = None
         self.mainmenu = None
-        self.directoryselector = None
         self.options = None
         self.comparator = None
         self.userconfig = {
@@ -31,26 +28,25 @@ class MainApplication(tk.Tk):
             }
         }
         self.database = None
-        self.directory = None
 
         self.load_config()
         self.load_components()
         self.load_database()
+
         if self.userconfig["main"]["selected_folder"]:
-            self.set_directory(self.userconfig["main"]["selected_folder"])
+            self.options.set_directory(self.userconfig["main"]["selected_folder"])
+            self.options.load_directory()
 
     def load_components(self):
         self.title("smartrenamer")
         w, h = self.winfo_screenwidth(), self.winfo_screenheight()
         self.geometry("%dx%d+0+0" % (w, h))
+        self.options = Options(self)
+        self.options.pack(fill="x")
 
         self.mainmenu = MainMenu(self)
-        self.directoryselector = DirectorySelector(self)
-        self.options = Options(self)
         self.comparator = Comparator(self)
 
-        self.directoryselector.pack(fill="x")
-        self.options.pack(fill="x")
         self.comparator.pack(expand=True, fill="both")
 
         self.config(menu=self.mainmenu)
@@ -106,6 +102,12 @@ class MainApplication(tk.Tk):
                                     self.userconfig[section_name][config_key] = config[section_name][config_key]
             return self.userconfig
 
+    def save_config_directory(self, directory):
+        if not directory:
+            return False
+        self.userconfig["main"]["selected_folder"] = directory
+        self.save_config()
+
     def save_config(self):
         config_path = self.get_config_path(True)
         with open(config_path, 'w') as configfile:
@@ -133,26 +135,6 @@ class MainApplication(tk.Tk):
         if changed:
             self.save_config()
 
-    def load_new_directory(self):
-        self.open_new_directory()
-        self.load_directory()
-
-    def open_new_directory(self):
-        existing_folder = self.userconfig["main"]["selected_folder"]
-        if existing_folder:
-            return self.set_directory(tkinter.filedialog.askdirectory(initialdir = existing_folder))
-        return self.set_directory(tkinter.filedialog.askdirectory())
-
-    def set_directory(self, directory = False):
-        if not directory:
-            return False
-        self.userconfig["main"]["selected_folder"] = directory
-        self.save_config()
-
-        entry = self.nametowidget("directoryselector.directory_entry")
-        entry.delete(0,"end")
-        entry.insert(0, directory)
-
     def get_files_list(self):
         selected_folder = self.userconfig["main"]["selected_folder"]
         if not selected_folder:
@@ -167,29 +149,6 @@ class MainApplication(tk.Tk):
         after_list.delete(0,'end')
         before_list.update()
         after_list.update()
-
-    def load_directory(self):
-        self.clear_filelists()
-        content = self.get_files_list()
-        content = sorted(content)
-        options = self.nametowidget("options")
-        action = options.get_action()
-        before_list = self.nametowidget("comparator_frame.before_frame.before_list")
-        after_list = self.nametowidget("comparator_frame.after_frame.after_list")
-
-        if action == "clean":
-            wordmanager = self.nametowidget("options.wordmanager")
-            wordmanager.load_words()
-
-        for file in content:
-            filepath_before = str(file)
-            filepath_after = filepath_before
-            if action == "clean":
-                filepath_after = wordmanager.clean_filepath(str(file))
-
-            if filepath_before != filepath_after:
-                before_list.insert(tk.END, filepath_before)
-                after_list.insert(tk.END, filepath_after)
 
     def get_separators_all(self):
         separators = ""

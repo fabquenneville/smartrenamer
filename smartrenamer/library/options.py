@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from pprint import pprint
+import tkinter.filedialog
 import tkinter as tk
 
 from .wordmanager import WordManager
@@ -17,8 +18,10 @@ class Options(tk.LabelFrame):
 
         self.action = tk.StringVar()
         self.operationselector = None
+        self.directoryselector = None
         self.operationoptionsselector = None
         self.variables = {
+            "directory":                    tk.StringVar(),
             "remove_words":                 tk.IntVar(),
             "unify_capitalisation":         tk.IntVar(),
             "unify_capitalisation_type":    tk.StringVar(),
@@ -42,7 +45,11 @@ class Options(tk.LabelFrame):
         self.load_components()
         self.reload_subcomponents()
 
+
+
     def load_components(self):
+        mainapp = self.winfo_toplevel()
+
         self.operationselector = tk.LabelFrame(
             self,
             text="Operations",
@@ -81,11 +88,34 @@ class Options(tk.LabelFrame):
             name="operationoptionsselector",
             padx=10,
         )
+
+
+        self.directoryselector = tk.LabelFrame(
+            self,
+            text="Current directory",
+            name="directoryselector",
+            # padx=10, pady = 1
+        )
+
+        textfield = tk.Entry(self.directoryselector, name="directory_entry")
+        textfield.focus()
+        reload_button = tk.Button(self.directoryselector, text='Reload', command= self.load_directory)
+        open_button = tk.Button(self.directoryselector, text='Open directory', command= self.load_new_directory)
+        
+        textfield.pack(side="left", fill="x", expand=True)
+        reload_button.pack(side="left", fill=None, expand=False)
+        open_button.pack(side="right", fill=None, expand=False)
+
+
+
+
+
         self.wordmanager = WordManager(self)
 
         self.operationselector.grid(row=0, column=0, sticky="new")
-        self.operationoptionsselector.grid(row=0, column=1, sticky="new")
-        self.wordmanager.grid(row=1, column=0, columnspan=2, sticky="sew")
+        self.directoryselector.grid(row=0, column=1, sticky="new")
+        self.operationoptionsselector.grid(row=1, column=0, columnspan=2, sticky="new")
+        self.wordmanager.grid(row=2, column=0, columnspan=2, sticky="sew")
 
     def reload_subcomponents(self):
         mainapp = self.winfo_toplevel()
@@ -136,7 +166,7 @@ class Options(tk.LabelFrame):
                 ),
             ]
 
-            nbcol = 2
+            nbcol = 3
             xpos = 0
             ypos = 0
 
@@ -314,7 +344,6 @@ class Options(tk.LabelFrame):
                             subcomponent.select()
                         subcomponent.pack(side="left")
 
-
                 if component._name == "unify_dates_separators_frame":
                     subcomponents = [
                         tk.Checkbutton(
@@ -377,3 +406,53 @@ class Options(tk.LabelFrame):
              
     def get_bracketname(self):
         return self.variables["unify_brackets_type"].get()
+
+
+
+
+
+
+
+
+
+    def set_directory(self, directory = False):
+        mainapp = self.winfo_toplevel()
+        mainapp.save_config_directory(directory)
+
+        entry = self.nametowidget("directoryselector.directory_entry")
+        entry.delete(0,"end")
+        entry.insert(0, directory)
+
+    def load_new_directory(self):
+        self.open_new_directory()
+        self.load_directory()
+
+    def open_new_directory(self):
+        mainapp = self.winfo_toplevel()
+        existing_folder = mainapp.get_config()["main"]["selected_folder"]
+        if existing_folder:
+            return self.set_directory(tkinter.filedialog.askdirectory(initialdir = existing_folder))
+        return self.set_directory(tkinter.filedialog.askdirectory())
+
+    def load_directory(self):
+        mainapp = self.winfo_toplevel()
+        mainapp.clear_filelists()
+        content = mainapp.get_files_list()
+        content = sorted(content)
+        action = self.get_action()
+        before_list = mainapp.nametowidget("comparator_frame.before_frame.before_list")
+        after_list = mainapp.nametowidget("comparator_frame.after_frame.after_list")
+
+        if action == "clean":
+            wordmanager = mainapp.nametowidget("options.wordmanager")
+            wordmanager.load_words()
+
+        for file in content:
+            filepath_before = str(file)
+            filepath_after = filepath_before
+            if action == "clean":
+                filepath_after = wordmanager.clean_filepath(str(file))
+
+            if filepath_before != filepath_after:
+                before_list.insert(tk.END, filepath_before)
+                after_list.insert(tk.END, filepath_after)
