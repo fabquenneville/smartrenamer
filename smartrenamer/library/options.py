@@ -48,8 +48,8 @@ class Options(tk.LabelFrame):
 
 
     def load_components(self):
-        mainapp = self.winfo_toplevel()
 
+        # Operation selector
         self.operationselector = tk.LabelFrame(
             self,
             text="Operations",
@@ -89,7 +89,7 @@ class Options(tk.LabelFrame):
             padx=10,
         )
 
-
+        # Directory selector
         self.directoryselector = tk.LabelFrame(
             self,
             text="Current directory",
@@ -106,10 +106,7 @@ class Options(tk.LabelFrame):
         reload_button.pack(side="left", fill=None, expand=False)
         open_button.pack(side="right", fill=None, expand=False)
 
-
-
-
-
+        # Word manager
         self.wordmanager = WordManager(self)
 
         self.operationselector.grid(row=0, column=0, sticky="new")

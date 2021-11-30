@@ -263,6 +263,12 @@ class WordManager(tk.LabelFrame):
                 if v:
                     res += v[0] + v[1]
             return res
+        if format == "list":
+            res = []
+            for k, v in brackets.items():
+                if v:
+                    res += [v[0], v[1]]
+            return res
         if format == "dict":
             return brackets
         for bracket_type in brackets.keys():
@@ -294,6 +300,16 @@ class WordManager(tk.LabelFrame):
             if word_data["remove"] == 1:
                 removables.append(word)
         return removables
+
+    @staticmethod
+    def get_date_regex():
+        separators_regex = '|'.join(map(re.escape, WordManager.get_all_separators("string")))
+        regexes = [
+            f"(?:(?<=^)|(?<=[^\d]))(\d{{2}})([{separators_regex}]{{1}})(\d{{2}})([{separators_regex}]{{1}})(\d{{2}})(?:(?=$)|(?=[^\d]))", # 00-00-00
+            f"(?:(?<=^)|(?<=[^\d]))(\d{{4}})([{separators_regex}]{{1}})(\d{{2}})([{separators_regex}]{{1}})(\d{{2}})(?:(?=$)|(?=[^\d]))", # ^0000-00-00
+            f"(?:(?<=^)|(?<=[^\d]))(\d{{2}})([{separators_regex}]{{1}})(\d{{2}})([{separators_regex}]{{1}})(\d{{4}})(?:(?=$)|(?=[^\d]))", # ^00-00-0000
+        ]
+        return '|'.join(regexes)
 
     def load_db_words(self):
         mainapp = self.winfo_toplevel()
@@ -505,23 +521,13 @@ class WordManager(tk.LabelFrame):
         mainapp = self.winfo_toplevel()
         options = mainapp.nametowidget("options")
         option_variables = options.get_variables()
-        separators_from, separators_to = self.get_separators()
-        separators_all = separators_from + separators_to
         current_y = int(time.strftime("%y", time.localtime()))
         new_format = option_variables["unify_dates_format"]
         change_separators = option_variables["unify_dates_separators"]
         separator_type = option_variables["unify_dates_separators_type"]
         separator = WordManager.get_all_separators(separator_type)
 
-        sep_regex = '|'.join(map(re.escape, separators_all))
-        regexes = [
-            f"(?:(?<=^)|(?<=[^\d]))(\d{{2}})([{sep_regex}]{{1}})(\d{{2}})([{sep_regex}]{{1}})(\d{{2}})(?:(?=$)|(?=[^\d]))", # 00-00-00
-            f"(?:(?<=^)|(?<=[^\d]))(\d{{4}})([{sep_regex}]{{1}})(\d{{2}})([{sep_regex}]{{1}})(\d{{2}})(?:(?=$)|(?=[^\d]))", # ^0000-00-00
-            f"(?:(?<=^)|(?<=[^\d]))(\d{{2}})([{sep_regex}]{{1}})(\d{{2}})([{sep_regex}]{{1}})(\d{{4}})(?:(?=$)|(?=[^\d]))", # ^00-00-0000
-        ]
-        date_regex = '|'.join(regexes)
-
-        dates = re.findall(date_regex, filepath)
+        dates = re.findall(WordManager.get_date_regex(), filepath)
         for raw_date in dates:
             old_date = ''.join(raw_date)
             year = False
@@ -581,6 +587,97 @@ class WordManager(tk.LabelFrame):
             filepath = filepath.replace(old_date, new_date)
 
         return filepath
+
+    def clean_filepath_dates_brackets(self, filepath):
+        mainapp = self.winfo_toplevel()
+        options = mainapp.nametowidget("options")
+        option_variables = options.get_variables()
+        bracket_type = option_variables["unify_dates_brackets_type"]
+        selected_brackets = WordManager.get_all_brackets(bracket_type)
+        all_brackets = WordManager.get_all_brackets("string")
+        all_separators = WordManager.get_all_separators("string")
+
+
+        components = os.path.normpath(filepath).split(os.sep)
+        # Removing file extension
+        components[-1] = str(os.path.splitext(components[-1])[0])
+
+        new_components = []
+        for compo in components:
+            new_component = compo
+            dates = re.findall(WordManager.get_date_regex(), compo)
+            for raw_date in dates:
+                date_string = ''.join(raw_date)
+                position_start = compo.find(date_string)
+                position_end = position_start + len(date_string)
+                pos_start_new, pos_end_new = WordManager.map_wrapper(compo, position_start, position_end)
+                previous_header = compo[pos_start_new:position_start]
+                previous_tail = compo[position_end:pos_end_new]
+                header_bracket = False
+                tail_bracket = False
+                for c in previous_header:
+                    if c in all_brackets:
+                        # Get the last header bracket  ([yy-mm-dd] something)
+                        header_bracket = c
+                for c in previous_tail:
+                    if c in all_brackets:
+                        # Get the first tail bracket
+                        tail_bracket = c
+                        break
+
+                new_header = False
+                new_tail = False
+                if header_bracket and tail_bracket:
+                    paired = False
+                    for brackets in WordManager.get_all_brackets("tupples"):
+                        if header_bracket == brackets[0] and tail_bracket == brackets[1]:
+                            paired = True
+                    if paired and header_bracket != selected_brackets[0] and tail_bracket != selected_brackets[1]:
+                        # Replace last bracket in header
+                        new_header = selected_brackets[0].join(previous_header.rsplit(header_bracket, 1))
+                        # Replace first bracket in header
+                        new_tail = previous_tail
+                        new_tail.replace(tail_bracket, selected_brackets[1], 1)
+                
+                if not new_header and not new_tail:
+                    new_header = selected_brackets[0]
+                    if previous_header:
+                        new_header = previous_header + selected_brackets[0]
+                    new_tail = selected_brackets[1]
+                    if previous_tail:
+                        new_tail = selected_brackets[1] + previous_tail
+
+                previous_substring = previous_header + date_string + previous_tail
+                new_substring = new_header + date_string + new_tail
+                new_component = compo.replace(previous_substring, new_substring, 1)
+            new_components.append(new_component)
+
+        
+        new_filepath = os.path.join(*new_components)
+
+        # Adding back extension
+        new_filepath = "." + os.sep + new_filepath + str(os.path.splitext(filepath)[-1])
+        return new_filepath
+
+    @staticmethod
+    def map_wrapper(string, start, end):
+        wrappings_start = WordManager.get_all_separators("list")
+        wrappings_end = wrappings_start.copy()
+        brackets = WordManager.get_all_brackets()
+        for pair in brackets:
+            wrappings_start.append(pair[0])
+            wrappings_end.append(pair[1])
+
+
+        new_start, new_end = start, end
+        if start - 1 >= 0 and string[start - 1] in wrappings_start:
+            new_start = start - 1
+        if end + 1 <= len(string) and string[end] in wrappings_end:
+            new_end = end + 1
+
+        if new_start != start or new_end != end:
+            return WordManager.map_wrapper(string, new_start, new_end)
+        return new_start, new_end
     
     @staticmethod
     def remove_head_char(character, string):
@@ -676,5 +773,7 @@ class WordManager(tk.LabelFrame):
         # print(f"after clean_filepath_separators: {filepath}")
         if option_variables["unify_dates"] == 1:
             filepath = self.clean_filepath_dates(filepath)
+        if option_variables["unify_dates_brackets"] == 1:
+            filepath = self.clean_filepath_dates_brackets(filepath)
         # print(f"after clean_filepath_dates: {filepath}")
         return filepath
