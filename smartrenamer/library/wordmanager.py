@@ -43,6 +43,7 @@ class WordManager(tk.LabelFrame):
     
     def remove_words(self):
         mainapp = self.winfo_toplevel()
+        options = mainapp.nametowidget("options")
         mainapp.clear_filelists()
 
         for word, word_data in self.word_checkboxes.items():
@@ -53,11 +54,12 @@ class WordManager(tk.LabelFrame):
                 }
         
         self.save_words()
-        mainapp.load_directory()
+        options.load_directory()
 
     
     def remove_word(self):
         mainapp = self.winfo_toplevel()
+        options = mainapp.nametowidget("options")
         mainapp.clear_filelists()
 
         self.words[self.managed_word.get()] = {
@@ -66,10 +68,11 @@ class WordManager(tk.LabelFrame):
         }
         self.save_words()
         self.clear_individual_word_entry()
-        mainapp.load_directory()
+        options.load_directory()
     
     def ignore_words(self):
         mainapp = self.winfo_toplevel()
+        options = mainapp.nametowidget("options")
         mainapp.clear_filelists()
 
         for word, word_data in self.word_checkboxes.items():
@@ -79,10 +82,11 @@ class WordManager(tk.LabelFrame):
                     "remove" : 0
                 }
         self.save_words()
-        mainapp.load_directory()
+        options.load_directory()
     
     def ignore_word(self):
         mainapp = self.winfo_toplevel()
+        options = mainapp.nametowidget("options")
         mainapp.clear_filelists()
 
         self.words[self.managed_word.get()] = {
@@ -92,7 +96,7 @@ class WordManager(tk.LabelFrame):
         self.save_words()
         self.clear_individual_word_entry()
 
-        mainapp.load_directory()
+        options.load_directory()
     
     def save_words(self):
         mainapp = self.winfo_toplevel()

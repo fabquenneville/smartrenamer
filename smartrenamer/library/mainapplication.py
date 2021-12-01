@@ -4,6 +4,7 @@ import json
 import os
 import sqlite3
 from pathlib import Path
+import tkinter.filedialog
 import tkinter as tk
 
 from .comparator import Comparator
@@ -134,9 +135,22 @@ class MainApplication(tk.Tk):
             changed = True
         if changed:
             self.save_config()
+    
+    def get_set_directory(self):
+        folder_config = self.get_config()["main"]["selected_folder"]
+
+        entry = self.options.nametowidget("directoryselector.directory_entry")
+        folder_entry = entry.get()
+
+        if folder_entry and folder_entry != folder_config:
+            self.save_config_directory(folder_entry)
+            return folder_entry
+        if folder_config:
+            return folder_config
+        return self.options.set_directory(tkinter.filedialog.askdirectory())
 
     def get_files_list(self):
-        selected_folder = self.userconfig["main"]["selected_folder"]
+        selected_folder = self.get_set_directory()
         if not selected_folder:
             return False
 

@@ -426,9 +426,10 @@ class Options(tk.LabelFrame):
 
     def open_new_directory(self):
         mainapp = self.winfo_toplevel()
-        existing_folder = mainapp.get_config()["main"]["selected_folder"]
-        if existing_folder:
-            return self.set_directory(tkinter.filedialog.askdirectory(initialdir = existing_folder))
+        current_folder = mainapp.get_set_directory()
+
+        if current_folder:
+            return self.set_directory(tkinter.filedialog.askdirectory(initialdir = current_folder))
         return self.set_directory(tkinter.filedialog.askdirectory())
 
     def load_directory(self):
