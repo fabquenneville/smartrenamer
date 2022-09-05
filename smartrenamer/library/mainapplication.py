@@ -55,8 +55,6 @@ class MainApplication(tk.Tk):
     @staticmethod
     def get_config_path(createfolders = False):
         homepath = str(Path.home())
-        if not homepath[-1] == os.sep:
-            homepath += os.sep
         config_folder_path = os.path.join(homepath, ".config")
         app_config_folder_path = os.path.join(config_folder_path, "smartrenamer")
         app_config_path = os.path.join(app_config_folder_path, "config.json")
